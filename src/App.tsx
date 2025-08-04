@@ -529,6 +529,29 @@ function App() {
     return code;
   };
 
+  const generateSVGString = () => {
+    if (polygons.length === 0) return '# No polygons created yet';
+
+    const imgWidth = uploadedImage?.naturalWidth || 1;
+    const imgHeight = uploadedImage?.naturalHeight || 1;
+
+    let svgString = '';
+    polygons.forEach((polygon, index) => {
+      svgString += `# ${polygon.name}\n`;
+      
+      const points = polygon.points.map(point => {
+        if (normalize && uploadedImage) {
+          return `${(point.x / imgWidth).toFixed(4)} ${(point.y / imgHeight).toFixed(4)}`;
+        }
+        return `${Math.round(point.x)} ${Math.round(point.y)}`;
+      });
+
+      svgString += points.join(' ');
+      svgString += '\n\n';
+    });
+
+    return svgString;
+  };
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(generatePythonCode());
@@ -539,6 +562,15 @@ function App() {
     }
   };
 
+  const copySVGToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(generateSVGString());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-6">
@@ -767,6 +799,19 @@ function App() {
                 </button>
               </div>
 
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2 text-gray-800">SVG String Format</h3>
+                <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
+                  <pre>{generateSVGString()}</pre>
+                </div>
+                <button
+                  onClick={copySVGToClipboard}
+                  className="mt-2 py-1 px-3 bg-green-600 hover:bg-green-700 text-white text-sm rounded flex items-center gap-1 transition-colors"
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? 'Copied!' : 'Copy to Clipboard'}
+                </button>
+              </div>
               <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2 text-gray-800">Edit Coordinates</h3>
                 <div className="coordinates-panel bg-gray-50 rounded p-3 max-h-60 overflow-y-auto">
