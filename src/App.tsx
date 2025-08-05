@@ -24,6 +24,8 @@ interface DraggedPoint {
   polygon: Polygon;
 }
 
+type ViewType = 'static' | 'double-panoramic';
+
 function App() {
   // State variables
   const [currentTool, setCurrentTool] = useState<'select' | 'polygon'>('polygon');
@@ -48,6 +50,7 @@ function App() {
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
   const [editingSVGString, setEditingSVGString] = useState('');
   const [isEditingSVG, setIsEditingSVG] = useState(false);
+  const [viewType, setViewType] = useState<ViewType>('static');
 
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -186,13 +189,43 @@ function App() {
       x = imgWidth;
     }
 
-    // Snap to top edge
-    if (Math.abs(y - 0) <= threshold) {
-      y = 0;
-    }
-    // Snap to bottom edge
-    else if (Math.abs(y - imgHeight) <= threshold) {
-      y = imgHeight;
+    // Handle vertical snapping based on view type
+    if (viewType === 'static') {
+      // Snap to top edge
+      if (Math.abs(y - 0) <= threshold) {
+        y = 0;
+      }
+      // Snap to bottom edge
+      else if (Math.abs(y - imgHeight) <= threshold) {
+        y = imgHeight;
+      }
+    } else if (viewType === 'double-panoramic') {
+      const midPoint = imgHeight / 2;
+      
+      // Determine which half we're in
+      if (y <= midPoint) {
+        // Top half - snap to top edge or middle boundary
+        if (Math.abs(y - 0) <= threshold) {
+          y = 0;
+        } else if (Math.abs(y - midPoint) <= threshold) {
+          y = midPoint;
+        }
+        // Constrain to top half
+        if (y > midPoint) {
+          y = midPoint;
+        }
+      } else {
+        // Bottom half - snap to middle boundary + 1 or bottom edge
+        if (Math.abs(y - midPoint) <= threshold) {
+          y = midPoint;
+        } else if (Math.abs(y - imgHeight) <= threshold) {
+          y = imgHeight + 1;
+        }
+        // Constrain to bottom half
+        if (y < midPoint) {
+          y = midPoint;
+        }
+      }
     }
 
     return { x, y };
@@ -728,6 +761,24 @@ function App() {
               </div>
 
               <div className="border-t border-gray-200 pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">View Type</label>
+                <select
+                  value={viewType}
+                  onChange={(e) => setViewType(e.target.value as ViewType)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+                >
+                  <option value="static">Static View</option>
+                  <option value="double-panoramic">Double Panoramic View</option>
+                </select>
+                <div className="text-xs text-gray-500 mt-1">
+                  {viewType === 'static' 
+                    ? 'Normal single image view' 
+                    : 'Top and bottom halves are separate images'
+                  }
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Drawing Tools</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -819,7 +870,9 @@ function App() {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div
                 ref={canvasContainerRef}
-                className="relative w-full h-96 lg:h-[600px] overflow-hidden bg-gray-50 bg-grid-pattern"
+                className={`relative w-full h-96 lg:h-[600px] overflow-hidden bg-gray-50 bg-grid-pattern ${
+                  viewType === 'double-panoramic' ? 'border-dashed' : ''
+                }`}
                 style={{
                   backgroundImage: 'linear-gradient(#e5e5e5 1px, transparent 1px), linear-gradient(90deg, #e5e5e5 1px, transparent 1px)',
                   backgroundSize: '20px 20px',
@@ -837,7 +890,18 @@ function App() {
                   style={{
                     cursor: currentTool === 'polygon' ? 'crosshair' : isDragging ? 'grabbing' : 'grab'
                   }}
-                />
+                >
+                  {/* Double panoramic view divider line */}
+                  {viewType === 'double-panoramic' && uploadedImage && (
+                    <div
+                      className="absolute left-0 right-0 border-t-2 border-dashed border-red-400 pointer-events-none z-20"
+                      style={{
+                        top: `${uploadedImage.naturalHeight / 2}px`,
+                        opacity: 0.7
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
