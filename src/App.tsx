@@ -46,6 +46,8 @@ function App() {
   const [snapToEdge, setSnapToEdge] = useState(true);
   const [snapThreshold, setSnapThreshold] = useState(20);
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
+  const [editingSVGString, setEditingSVGString] = useState('');
+  const [isEditingSVG, setIsEditingSVG] = useState(false);
 
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -568,6 +570,109 @@ function App() {
 
     return svgString;
   };
+
+  const parseSVGString = (svgString: string) => {
+    const lines = svgString.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
+    const newPolygons: Polygon[] = [];
+    
+    lines.forEach((line, index) => {
+      const coords = line.trim().split(/\s+/).map(coord => parseFloat(coord)).filter(num => !isNaN(num));
+      
+      if (coords.length >= 6 && coords.length % 2 === 0) { // At least 3 points (6 coordinates)
+        const points: Point[] = [];
+        for (let i = 0; i < coords.length; i += 2) {
+          let x = coords[i];
+          let y = coords[i + 1];
+          
+          // If coordinates are normalized, convert back to pixel coordinates
+          if (normalize && uploadedImage) {
+            x = x * uploadedImage.naturalWidth;
+            y = y * uploadedImage.naturalHeight;
+          }
+          
+          points.push({ x, y });
+        }
+        
+        const newPolygon: Polygon = {
+          id: Date.now() + index,
+          name: `Polygon ${index + 1}`,
+          points,
+          pointElements: []
+        };
+        
+        newPolygons.push(newPolygon);
+      }
+    });
+    
+    return newPolygons;
+  };
+
+  const applySVGStringEdit = () => {
+    try {
+      // Clear existing polygons
+      polygons.forEach(polygon => removePolygon(polygon));
+      
+      // Parse and create new polygons
+      const newPolygons = parseSVGString(editingSVGString);
+      
+      newPolygons.forEach(polygon => {
+        // Create SVG elements
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('class', 'absolute top-0 left-0 w-full h-full pointer-events-none');
+        svg.style.transformOrigin = '0 0';
+
+        const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        polygonElement.setAttribute('class', 'fill-blue-500 stroke-blue-500 stroke-2');
+        polygonElement.setAttribute('fill-opacity', polygonOpacity.toString());
+        polygonElement.style.vectorEffect = 'non-scaling-stroke';
+
+        const nameElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        nameElement.setAttribute('class', 'polygon-name');
+        nameElement.setAttribute('fill', '#3b82f6');
+        nameElement.setAttribute('font-size', '12');
+        nameElement.setAttribute('font-weight', 'bold');
+        nameElement.setAttribute('x', polygon.points[0].x.toString());
+        nameElement.setAttribute('y', (polygon.points[0].y - 15).toString());
+        nameElement.textContent = polygon.name;
+
+        svg.appendChild(polygonElement);
+        svg.appendChild(nameElement);
+
+        if (canvasRef.current) {
+          canvasRef.current.appendChild(svg);
+        }
+
+        polygon.element = polygonElement;
+        polygon.svg = svg;
+        polygon.nameElement = nameElement;
+
+        // Create point elements
+        polygon.points.forEach((point, index) => {
+          const pointElement = createPointElement(point.x, point.y, polygon, index);
+          polygon.pointElements.push(pointElement);
+        });
+
+        updatePolygonPoints(polygon);
+      });
+      
+      setPolygons(newPolygons);
+      setIsEditingSVG(false);
+    } catch (error) {
+      console.error('Error parsing SVG string:', error);
+      alert('Error parsing SVG string. Please check the format.');
+    }
+  };
+
+  const startEditingSVG = () => {
+    setEditingSVGString(generateSVGString());
+    setIsEditingSVG(true);
+  };
+
+  const cancelEditingSVG = () => {
+    setIsEditingSVG(false);
+    setEditingSVGString('');
+  };
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(generatePythonCode());
@@ -836,16 +941,54 @@ function App() {
 
               <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2 text-gray-800">SVG String Format</h3>
-                <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
-                  <pre>{generateSVGString()}</pre>
-                </div>
-                <button
-                  onClick={copySVGToClipboard}
-                  className="mt-2 py-1 px-3 bg-green-600 hover:bg-green-700 text-white text-sm rounded flex items-center gap-1 transition-colors"
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? 'Copied!' : 'Copy to Clipboard'}
-                </button>
+                {!isEditingSVG ? (
+                  <>
+                    <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
+                      <pre>{generateSVGString()}</pre>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={copySVGToClipboard}
+                        className="py-1 px-3 bg-green-600 hover:bg-green-700 text-white text-sm rounded flex items-center gap-1 transition-colors"
+                      >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied ? 'Copied!' : 'Copy to Clipboard'}
+                      </button>
+                      <button
+                        onClick={startEditingSVG}
+                        className="py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                      >
+                        Edit SVG String
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <textarea
+                      value={editingSVGString}
+                      onChange={(e) => setEditingSVGString(e.target.value)}
+                      className="w-full h-32 bg-gray-800 text-green-400 p-3 rounded font-mono text-sm resize-none"
+                      placeholder="Enter SVG string format (x y x y x y)..."
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={applySVGStringEdit}
+                        className="py-1 px-3 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                      >
+                        Apply Changes
+                      </button>
+                      <button
+                        onClick={cancelEditingSVG}
+                        className="py-1 px-3 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Format: Each line represents one polygon. Use space-separated x y coordinates.
+                    </div>
+                  </>
+                )}
               </div>
               <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2 text-gray-800">Edit Coordinates</h3>
