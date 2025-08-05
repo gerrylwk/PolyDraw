@@ -45,6 +45,7 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [snapToEdge, setSnapToEdge] = useState(true);
   const [snapThreshold, setSnapThreshold] = useState(20);
+  const [polygonOpacity, setPolygonOpacity] = useState(0.2);
 
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -256,6 +257,7 @@ function App() {
 
     const pointsStr = polygon.points.map(p => `${p.x},${p.y}`).join(' ');
     polygon.element.setAttribute('points', pointsStr);
+    polygon.element.setAttribute('fill-opacity', polygonOpacity.toString());
 
     polygon.points.forEach((point, index) => {
       if (polygon.pointElements[index]) {
@@ -286,7 +288,8 @@ function App() {
     svg.style.transformOrigin = '0 0';
 
     const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygonElement.setAttribute('class', 'fill-blue-500 fill-opacity-20 stroke-blue-500 stroke-2');
+    polygonElement.setAttribute('class', 'fill-blue-500 stroke-blue-500 stroke-2');
+    polygonElement.setAttribute('fill-opacity', polygonOpacity.toString());
     polygonElement.style.vectorEffect = 'non-scaling-stroke';
 
     const previewLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -504,6 +507,19 @@ function App() {
     setSelectedPoint(null);
   };
 
+  const updateAllPolygonOpacity = (opacity: number) => {
+    polygons.forEach(polygon => {
+      if (polygon.element) {
+        polygon.element.setAttribute('fill-opacity', opacity.toString());
+      }
+    });
+  };
+
+  const handleOpacityChange = (newOpacity: number) => {
+    setPolygonOpacity(newOpacity);
+    updateAllPolygonOpacity(newOpacity);
+  };
+
   const generatePythonCode = () => {
     if (polygons.length === 0) return '# No polygons created yet';
 
@@ -659,6 +675,25 @@ function App() {
                 <div className="mt-2 text-xs text-gray-500">
                   <div>Zoom: {Math.round(scale * 100)}%</div>
                   <div>Or use mouse wheel</div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Polygon Opacity: {Math.round(polygonOpacity * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={polygonOpacity}
+                  onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>0%</span>
+                  <span>100%</span>
                 </div>
               </div>
 
