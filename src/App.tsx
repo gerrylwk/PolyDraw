@@ -51,6 +51,7 @@ function App() {
   const [editingSVGString, setEditingSVGString] = useState('');
   const [isEditingSVG, setIsEditingSVG] = useState(false);
   const [viewType, setViewType] = useState<ViewType>('static');
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
 
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,9 @@ function App() {
   // Handle keyboard events for delete and escape functionality
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(true);
+      }
       if (e.key === 'Delete' && selectedPoint && currentTool === 'select') {
         e.preventDefault();
         removePoint(selectedPoint);
@@ -70,8 +74,18 @@ function App() {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [selectedPoint, currentPolygon, currentTool]);
 
   const updateCanvasTransform = useCallback(() => {
@@ -217,9 +231,9 @@ function App() {
       } else {
         // Bottom half - snap to middle boundary + 1 or bottom edge
         if (Math.abs(y - midPoint) <= threshold) {
-          y = midPoint;
+          y = midPoint + 1;
         } else if (Math.abs(y - imgHeight) <= threshold) {
-          y = imgHeight + 1;
+          y = imgHeight;
         }
         // Constrain to bottom half
         if (y < midPoint) {
@@ -365,12 +379,20 @@ function App() {
   const addPointToPolygon = (x: number, y: number) => {
     if (!currentPolygon) return;
 
+    let finalPosition = { x, y };
+    
+    // Apply line straightening if Shift is pressed and we have at least one point
+    if (isShiftPressed && currentPolygon.points.length > 0) {
+      const lastPoint = currentPolygon.points[currentPolygon.points.length - 1];
+      finalPosition = straightenLine(lastPoint, { x, y });
+    }
+
     const updatedPolygon = {
       ...currentPolygon,
-      points: [...currentPolygon.points, { x, y }]
+      points: [...currentPolygon.points, finalPosition]
     };
 
-    const pointElement = createPointElement(x, y, updatedPolygon, updatedPolygon.points.length - 1);
+    const pointElement = createPointElement(finalPosition.x, finalPosition.y, updatedPolygon, updatedPolygon.points.length - 1);
     updatedPolygon.pointElements.push(pointElement);
 
     setPolygons(prev => prev.map(p => p.id === updatedPolygon.id ? updatedPolygon : p));
@@ -518,10 +540,17 @@ function App() {
       e.preventDefault();
     } else if (currentTool === 'polygon' && currentPolygon && currentPolygon.previewLine) {
       const lastPoint = currentPolygon.points[currentPolygon.points.length - 1];
+      let previewPosition = { x, y };
+      
+      // Apply line straightening to preview line if Shift is pressed
+      if (isShiftPressed) {
+        previewPosition = straightenLine(lastPoint, { x, y });
+      }
+      
       currentPolygon.previewLine.setAttribute('x1', lastPoint.x.toString());
       currentPolygon.previewLine.setAttribute('y1', lastPoint.y.toString());
-      currentPolygon.previewLine.setAttribute('x2', x.toString());
-      currentPolygon.previewLine.setAttribute('y2', y.toString());
+      currentPolygon.previewLine.setAttribute('x2', previewPosition.x.toString());
+      currentPolygon.previewLine.setAttribute('y2', previewPosition.y.toString());
     }
   };
 
@@ -725,6 +754,50 @@ function App() {
       console.error('Failed to copy:', err);
     }
   };
+
+  const straightenLine = (startPoint: Point, endPoint: Point): Point => {
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+    
+    // Calculate angles for horizontal, vertical, and 45-degree lines
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    
+    // Normalize angle to 0-360 range
+    const normalizedAngle = ((angle % 360) + 360) % 360;
+    
+    // Define snap angles and their tolerances
+    const snapAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+    const tolerance = 22.5; // 22.5 degrees tolerance for snapping
+    
+    // Find the closest snap angle
+    let closestAngle = normalizedAngle;
+    let minDifference = Infinity;
+    
+    for (const snapAngle of snapAngles) {
+      const difference = Math.min(
+        Math.abs(normalizedAngle - snapAngle),
+        Math.abs(normalizedAngle - snapAngle + 360),
+        Math.abs(normalizedAngle - snapAngle - 360)
+      );
+      
+      if (difference < tolerance && difference < minDifference) {
+        minDifference = difference;
+        closestAngle = snapAngle;
+      }
+    }
+    
+    // Calculate the distance from start to end point
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Convert the closest angle back to radians and calculate new end point
+    const radians = closestAngle * (Math.PI / 180);
+    
+    return {
+      x: startPoint.x + Math.cos(radians) * distance,
+      y: startPoint.y + Math.sin(radians) * distance
+    };
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-6">
@@ -831,6 +904,26 @@ function App() {
                 <div className="mt-2 text-xs text-gray-500">
                   <div>Zoom: {Math.round(scale * 100)}%</div>
                   <div>Or use mouse wheel</div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Line Straightening</label>
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-3 h-3 rounded-full ${isShiftPressed ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <span className="text-sm font-medium">
+                      {isShiftPressed ? 'Shift Active' : 'Shift Inactive'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    <p className="mb-1">Hold <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">Shift</kbd> while drawing to straighten lines:</p>
+                    <ul className="list-disc list-inside space-y-0.5 ml-2">
+                      <li>Horizontal lines</li>
+                      <li>Vertical lines</li>
+                      <li>45° diagonal lines</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
 
