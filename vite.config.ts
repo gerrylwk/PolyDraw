@@ -7,4 +7,19 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  // Configuration for remote server deployment
+  server: {
+    host: '0.0.0.0', // Allow external connections
+    port: 5173,
+    strictPort: true,
+    allowedHosts: true, // Allow all hosts for development
+  },
+  preview: {
+    host: '0.0.0.0', // Allow external connections for preview mode
+    port: 4173,
+    strictPort: true,
+    allowedHosts: true, // Allow all hosts for preview mode
+  },
+  // Ensure assets are referenced correctly regardless of deployment path
+  base: './',
 });
