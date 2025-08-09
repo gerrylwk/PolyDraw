@@ -47,37 +47,29 @@ A simple SVG polygon editor built with React, TypeScript, and Vite. PolyDraw all
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
-- Node.js (version 16 or higher)
-- npm or yarn package manager
+- Docker
+- Docker Compose
 
 ### Quick Start
 
-1. **Clone or download the project**
+1. **Clone the repository**
    ```bash
    git clone <repository-url>
    cd PolyDraw
    ```
 
-2. **Install dependencies**
+2. **Start with Docker Compose**
    ```bash
-   npm install
+   docker-compose up -d --build
    ```
 
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
+3. **Access the application**
+   Open your browser and navigate to `http://localhost:3000`
 
-4. **Open your browser**
-   Navigate to `http://localhost:5173` (or the URL shown in your terminal)
-
-### Build for Production
-
+### Stop the application
 ```bash
-npm run build
+docker-compose down
 ```
-
-The built files will be in the `dist` folder, ready for deployment.
 
 ## 📖 How to Use
 
@@ -137,11 +129,7 @@ PolyDraw/
 └── tsconfig.json        # TypeScript configuration
 ```
 
-### Available Scripts
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+
 
 ## 🆘 Support
 

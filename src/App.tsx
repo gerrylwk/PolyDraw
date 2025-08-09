@@ -58,6 +58,97 @@ function App() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const updatePolygonPoints = useCallback((polygon: Polygon) => {
+    if (!polygon.element) return;
+
+    const pointsStr = polygon.points.map(p => `${p.x},${p.y}`).join(' ');
+    polygon.element.setAttribute('points', pointsStr);
+    polygon.element.setAttribute('fill-opacity', polygonOpacity.toString());
+
+    polygon.points.forEach((point, index) => {
+      if (polygon.pointElements[index]) {
+        polygon.pointElements[index].style.left = `${point.x}px`;
+        polygon.pointElements[index].style.top = `${point.y}px`;
+      }
+    });
+
+    if (polygon.nameElement && polygon.points.length > 0) {
+      const firstPoint = polygon.points[0];
+      polygon.nameElement.setAttribute('x', firstPoint.x.toString());
+      polygon.nameElement.setAttribute('y', (firstPoint.y - 15).toString());
+      polygon.nameElement.textContent = polygon.name;
+    }
+  }, [polygonOpacity]);
+
+  const removePolygon = useCallback((polygon: Polygon) => {
+    if (polygon.svg && canvasRef.current) {
+      canvasRef.current.removeChild(polygon.svg);
+    }
+
+    polygon.pointElements.forEach(point => {
+      if (point.parentNode && canvasRef.current) {
+        canvasRef.current.removeChild(point);
+      }
+    });
+
+    setPolygons(prev => prev.filter(p => p.id !== polygon.id));
+    
+    if (currentPolygon?.id === polygon.id) {
+      setCurrentPolygon(null);
+    }
+    if (selectedPolygon?.id === polygon.id) {
+      setSelectedPolygon(null);
+    }
+  }, [currentPolygon, selectedPolygon]);
+
+  const completePolygon = useCallback(() => {
+    if (!currentPolygon || currentPolygon.points.length < 3) {
+      if (currentPolygon) {
+        removePolygon(currentPolygon);
+      }
+      setCurrentPolygon(null);
+      return;
+    }
+
+    if (currentPolygon.previewLine && currentPolygon.svg) {
+      currentPolygon.svg.removeChild(currentPolygon.previewLine);
+      currentPolygon.previewLine = undefined;
+    }
+
+    setCurrentPolygon(null);
+  }, [currentPolygon, removePolygon]);
+
+  const removePoint = useCallback((pointData: DraggedPoint) => {
+    const { polygon, index } = pointData;
+    
+    if (polygon.points.length <= 3) {
+      removePolygon(polygon);
+      return;
+    }
+
+    const updatedPoints = polygon.points.filter((_, i) => i !== index);
+    
+    // Remove the point element
+    if (polygon.pointElements[index]) {
+      canvasRef.current?.removeChild(polygon.pointElements[index]);
+    }
+
+    const updatedPointElements = polygon.pointElements.filter((_, i) => i !== index);
+
+    const updatedPolygon = {
+      ...polygon,
+      points: updatedPoints,
+      pointElements: updatedPointElements
+    };
+
+    setPolygons(prev => prev.map(p => p.id === polygon.id ? updatedPolygon : p));
+    updatePolygonPoints(updatedPolygon);
+    
+    if (selectedPolygon?.id === polygon.id) {
+      setSelectedPolygon(updatedPolygon);
+    }
+  }, [selectedPolygon, removePolygon, updatePolygonPoints]);
+
   // Handle keyboard events for delete and escape functionality
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -301,28 +392,6 @@ function App() {
     return point;
   };
 
-  const updatePolygonPoints = useCallback((polygon: Polygon) => {
-    if (!polygon.element) return;
-
-    const pointsStr = polygon.points.map(p => `${p.x},${p.y}`).join(' ');
-    polygon.element.setAttribute('points', pointsStr);
-    polygon.element.setAttribute('fill-opacity', polygonOpacity.toString());
-
-    polygon.points.forEach((point, index) => {
-      if (polygon.pointElements[index]) {
-        polygon.pointElements[index].style.left = `${point.x}px`;
-        polygon.pointElements[index].style.top = `${point.y}px`;
-      }
-    });
-
-    if (polygon.nameElement && polygon.points.length > 0) {
-      const firstPoint = polygon.points[0];
-      polygon.nameElement.setAttribute('x', firstPoint.x.toString());
-      polygon.nameElement.setAttribute('y', (firstPoint.y - 15).toString());
-      polygon.nameElement.textContent = polygon.name;
-    }
-  }, [polygonOpacity]);
-
   const startNewPolygon = (x: number, y: number) => {
     const newPolygon: Polygon = {
       id: Date.now(),
@@ -399,75 +468,6 @@ function App() {
     setCurrentPolygon(updatedPolygon);
     updatePolygonPoints(updatedPolygon);
   };
-
-  const completePolygon = useCallback(() => {
-    if (!currentPolygon || currentPolygon.points.length < 3) {
-      if (currentPolygon) {
-        removePolygon(currentPolygon);
-      }
-      setCurrentPolygon(null);
-      return;
-    }
-
-    if (currentPolygon.previewLine && currentPolygon.svg) {
-      currentPolygon.svg.removeChild(currentPolygon.previewLine);
-      currentPolygon.previewLine = undefined;
-    }
-
-    setCurrentPolygon(null);
-  }, [currentPolygon, removePolygon]);
-
-  const removePoint = useCallback((pointData: DraggedPoint) => {
-    const { polygon, index } = pointData;
-    
-    if (polygon.points.length <= 3) {
-      removePolygon(polygon);
-      return;
-    }
-
-    const updatedPoints = polygon.points.filter((_, i) => i !== index);
-    
-    // Remove the point element
-    if (polygon.pointElements[index]) {
-      canvasRef.current?.removeChild(polygon.pointElements[index]);
-    }
-
-    const updatedPointElements = polygon.pointElements.filter((_, i) => i !== index);
-
-    const updatedPolygon = {
-      ...polygon,
-      points: updatedPoints,
-      pointElements: updatedPointElements
-    };
-
-    setPolygons(prev => prev.map(p => p.id === polygon.id ? updatedPolygon : p));
-    updatePolygonPoints(updatedPolygon);
-    
-    if (selectedPolygon?.id === polygon.id) {
-      setSelectedPolygon(updatedPolygon);
-    }
-  }, [selectedPolygon, removePolygon, updatePolygonPoints]);
-
-  const removePolygon = useCallback((polygon: Polygon) => {
-    if (polygon.svg && canvasRef.current) {
-      canvasRef.current.removeChild(polygon.svg);
-    }
-
-    polygon.pointElements.forEach(point => {
-      if (point.parentNode && canvasRef.current) {
-        canvasRef.current.removeChild(point);
-      }
-    });
-
-    setPolygons(prev => prev.filter(p => p.id !== polygon.id));
-    
-    if (currentPolygon?.id === polygon.id) {
-      setCurrentPolygon(null);
-    }
-    if (selectedPolygon?.id === polygon.id) {
-      setSelectedPolygon(null);
-    }
-  }, [currentPolygon, selectedPolygon]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;

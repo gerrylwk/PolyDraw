@@ -1,5 +1,5 @@
 services:
-  polydraw:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
