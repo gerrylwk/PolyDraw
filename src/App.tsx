@@ -86,7 +86,7 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [selectedPoint, currentPolygon, currentTool]);
+  }, [selectedPoint, currentPolygon, currentTool, completePolygon, removePoint]);
 
   const updateCanvasTransform = useCallback(() => {
     if (canvasRef.current) {
@@ -301,7 +301,7 @@ function App() {
     return point;
   };
 
-  const updatePolygonPoints = (polygon: Polygon) => {
+  const updatePolygonPoints = useCallback((polygon: Polygon) => {
     if (!polygon.element) return;
 
     const pointsStr = polygon.points.map(p => `${p.x},${p.y}`).join(' ');
@@ -321,7 +321,7 @@ function App() {
       polygon.nameElement.setAttribute('y', (firstPoint.y - 15).toString());
       polygon.nameElement.textContent = polygon.name;
     }
-  };
+  }, [polygonOpacity]);
 
   const startNewPolygon = (x: number, y: number) => {
     const newPolygon: Polygon = {
@@ -400,7 +400,7 @@ function App() {
     updatePolygonPoints(updatedPolygon);
   };
 
-  const completePolygon = () => {
+  const completePolygon = useCallback(() => {
     if (!currentPolygon || currentPolygon.points.length < 3) {
       if (currentPolygon) {
         removePolygon(currentPolygon);
@@ -415,9 +415,9 @@ function App() {
     }
 
     setCurrentPolygon(null);
-  };
+  }, [currentPolygon, removePolygon]);
 
-  const removePoint = (pointData: DraggedPoint) => {
+  const removePoint = useCallback((pointData: DraggedPoint) => {
     const { polygon, index } = pointData;
     
     if (polygon.points.length <= 3) {
@@ -446,9 +446,9 @@ function App() {
     if (selectedPolygon?.id === polygon.id) {
       setSelectedPolygon(updatedPolygon);
     }
-  };
+  }, [selectedPolygon, removePolygon, updatePolygonPoints]);
 
-  const removePolygon = (polygon: Polygon) => {
+  const removePolygon = useCallback((polygon: Polygon) => {
     if (polygon.svg && canvasRef.current) {
       canvasRef.current.removeChild(polygon.svg);
     }
@@ -467,7 +467,7 @@ function App() {
     if (selectedPolygon?.id === polygon.id) {
       setSelectedPolygon(null);
     }
-  };
+  }, [currentPolygon, selectedPolygon]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -616,7 +616,7 @@ function App() {
     const imgHeight = uploadedImage?.naturalHeight || 1;
 
     let svgString = '';
-    polygons.forEach((polygon, index) => {
+    polygons.forEach((polygon) => {
       svgString += `# ${polygon.name}\n`;
       
       const points = polygon.points.map(point => {
@@ -1053,7 +1053,7 @@ function App() {
                   <p className="text-gray-500 text-sm">No polygons created yet</p>
                 ) : (
                   <div className="space-y-2">
-                    {polygons.map((polygon, polyIndex) => (
+                    {polygons.map((polygon) => (
                       <div key={polygon.id} className="border-b border-gray-200 pb-2 mb-2">
                         <div className="font-medium text-gray-700 mb-1 flex items-center justify-between gap-2">
                           <input
@@ -1154,7 +1154,7 @@ function App() {
                     <p className="text-gray-500 text-sm">No polygons created yet</p>
                   ) : (
                     <div className="space-y-3">
-                      {polygons.map((polygon, polyIndex) => (
+                      {polygons.map((polygon) => (
                         <div key={polygon.id} className="border-b border-gray-200 pb-3 mb-3 last:border-b-0">
                           <div className="font-medium text-gray-700 mb-2 flex items-center justify-between gap-2">
                             <input
