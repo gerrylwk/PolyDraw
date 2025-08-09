@@ -1,0 +1,109 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual deployment
+
+env:
+  IMAGE_NAME: polydraw
+  CONTAINER_NAME: polydraw-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ env.IMAGE_NAME }}:latest .
+        docker build -t ${{ env.IMAGE_NAME }}:${{ github.sha }} .
+    
+    - name: Stop existing container
+      run: |
+        docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+        docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+      continue-on-error: true
+    
+    - name: Deploy new container
+      run: |
+        docker run -d \
+          --name ${{ env.CONTAINER_NAME }} \
+          --restart unless-stopped \
+          -p 3000:80 \
+          ${{ env.IMAGE_NAME }}:latest
+    
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for application to start..."
+        sleep 15
+    
+    - name: Health Check
+      run: |
+        echo "Performing health check..."
+        max_attempts=10
+        attempt=1
+        
+        while [ $attempt -le $max_attempts ]; do
+          if curl -f http://localhost:3000/health; then
+            echo "✅ Application is healthy!"
+            echo "🚀 Deployment successful!"
+            echo "📱 Application is running at: http://localhost:3000"
+            exit 0
+          fi
+          echo "⏳ Attempt $attempt/$max_attempts: Application not ready yet..."
+          sleep 10
+          attempt=$((attempt + 1))
+        done
+        
+        echo "❌ Health check failed after $max_attempts attempts"
+        echo "📋 Container logs:"
+        docker logs ${{ env.CONTAINER_NAME }}
+        exit 1
+    
+    - name: Rollback on failure
+      if: failure()
+      run: |
+        echo "🔄 Rolling back due to failed health check..."
+        docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+        docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+        
+        # Try to start previous version if it exists
+        if docker images ${{ env.IMAGE_NAME }}:previous --format "table {{.Repository}}" | grep -q ${{ env.IMAGE_NAME }}; then
+          echo "🔄 Starting previous version..."
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            --restart unless-stopped \
+            -p 3000:80 \
+            ${{ env.IMAGE_NAME }}:previous
+        fi
+    
+    - name: Tag successful deployment
+      if: success()
+      run: |
+        # Tag current image as previous for future rollbacks
+        docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:previous
+    
+    - name: Cleanup old images
+      if: always()
+      run: |
+        # Remove old images to save space (keep latest, previous, and current commit)
+        docker image prune -f
+        docker images ${{ env.IMAGE_NAME }} --format "table {{.Repository}}:{{.Tag}}" | \
+          grep -v -E "(latest|previous|${{ github.sha }})" | \
+          xargs -r docker rmi 2>/dev/null || true
