@@ -52,6 +52,7 @@ function App() {
   const [isEditingSVG, setIsEditingSVG] = useState(false);
   const [viewType, setViewType] = useState<ViewType>('static');
   const [isShiftPressed, setIsShiftPressed] = useState(false);
+  const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
 
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -238,7 +239,10 @@ function App() {
     setScale(prev => Math.max(0.1, Math.min(prev * factor, 10)));
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
+    // Only zoom if mouse is over canvas
+    if (!isMouseOverCanvas) return;
+
     e.preventDefault();
 
     const rect = canvasContainerRef.current?.getBoundingClientRect();
@@ -257,7 +261,17 @@ function App() {
     setScale(newScale);
     setOffsetX(mouseX - canvasX * newScale);
     setOffsetY(mouseY - canvasY * newScale);
-  };
+  }, [isMouseOverCanvas, offsetX, offsetY, scale]);
+
+  // Add wheel event listener with passive: false to allow preventDefault
+  useEffect(() => {
+    // Attach to document to catch all wheel events
+    document.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      document.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
 
   const getMousePosition = (e: React.MouseEvent) => {
     const rect = canvasContainerRef.current?.getBoundingClientRect();
@@ -971,11 +985,14 @@ function App() {
                   backgroundSize: '20px 20px',
                   touchAction: 'none'
                 }}
-                onWheel={handleWheel}
                 onMouseDown={handleCanvasMouseDown}
                 onMouseMove={handleCanvasMouseMove}
                 onMouseUp={handleCanvasMouseUp}
-                onMouseLeave={handleCanvasMouseUp}
+                onMouseEnter={() => setIsMouseOverCanvas(true)}
+                onMouseLeave={() => {
+                  setIsMouseOverCanvas(false);
+                  handleCanvasMouseUp();
+                }}
               >
                 <div
                   ref={canvasRef}
