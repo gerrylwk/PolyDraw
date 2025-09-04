@@ -50,6 +50,8 @@ function App() {
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
   const [editingSVGString, setEditingSVGString] = useState('');
   const [isEditingSVG, setIsEditingSVG] = useState(false);
+  const [editingPythonString, setEditingPythonString] = useState('');
+  const [isEditingPython, setIsEditingPython] = useState(false);
   const [viewType, setViewType] = useState<ViewType>('static');
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [isMouseOverCanvas, setIsMouseOverCanvas] = useState(false);
@@ -615,7 +617,6 @@ function App() {
         }
         return `(${Math.round(point.x)}, ${Math.round(point.y)})`;
       });
-
       code += points.join(', ');
       code += ']\n\n';
     });
@@ -645,6 +646,57 @@ function App() {
     });
 
     return svgString;
+  };
+
+  const parsePythonString = (pythonString: string) => {
+    const lines = pythonString.split('\n').filter(line => {
+      const trimmed = line.trim();
+      return trimmed && !trimmed.startsWith('#');
+    });
+    const newPolygons: Polygon[] = [];
+    
+    lines.forEach((line, index) => {
+      // Match Python list format: [(x, y), (x, y), ...] or with assignment
+      const listMatch = line.match(/(?:=\s*)?\[(.*)\]/);
+      if (listMatch) {
+        const coordsString = listMatch[1];
+        // Extract coordinate pairs from the string
+        const coordMatches = coordsString.match(/\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/g);
+        
+        if (coordMatches && coordMatches.length >= 3) { // At least 3 points
+          const points: Point[] = [];
+          
+          coordMatches.forEach(coordMatch => {
+            const coordPair = coordMatch.match(/\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/);
+            if (coordPair) {
+              let x = parseFloat(coordPair[1]);
+              let y = parseFloat(coordPair[2]);
+              
+              // If coordinates are normalized, convert back to pixel coordinates
+              if (normalize && uploadedImage) {
+                x = x * uploadedImage.naturalWidth;
+                y = y * uploadedImage.naturalHeight;
+              }
+              
+              points.push({ x, y });
+            }
+          });
+          
+          if (points.length >= 3) {
+            const newPolygon: Polygon = {
+              id: Date.now() + index,
+              name: `Polygon ${index + 1}`,
+              points,
+              pointElements: []
+            };
+            
+            newPolygons.push(newPolygon);
+          }
+        }
+      }
+    });
+    
+    return newPolygons;
   };
 
   const parseSVGString = (svgString: string) => {
@@ -681,6 +733,62 @@ function App() {
     });
     
     return newPolygons;
+  };
+
+  const applyPythonStringEdit = () => {
+    try {
+      // Clear existing polygons
+      polygons.forEach(polygon => removePolygon(polygon));
+      
+      // Parse and create new polygons
+      const newPolygons = parsePythonString(editingPythonString);
+      
+      newPolygons.forEach(polygon => {
+        // Create SVG elements
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('class', 'absolute top-0 left-0 w-full h-full pointer-events-none');
+        svg.style.transformOrigin = '0 0';
+
+        const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        polygonElement.setAttribute('class', 'fill-blue-500 stroke-blue-500 stroke-2');
+        polygonElement.setAttribute('fill-opacity', polygonOpacity.toString());
+        polygonElement.style.vectorEffect = 'non-scaling-stroke';
+
+        const nameElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        nameElement.setAttribute('class', 'polygon-name');
+        nameElement.setAttribute('fill', '#3b82f6');
+        nameElement.setAttribute('font-size', '12');
+        nameElement.setAttribute('font-weight', 'bold');
+        nameElement.setAttribute('x', polygon.points[0].x.toString());
+        nameElement.setAttribute('y', (polygon.points[0].y - 15).toString());
+        nameElement.textContent = polygon.name;
+
+        svg.appendChild(polygonElement);
+        svg.appendChild(nameElement);
+
+        if (canvasRef.current) {
+          canvasRef.current.appendChild(svg);
+        }
+
+        polygon.element = polygonElement;
+        polygon.svg = svg;
+        polygon.nameElement = nameElement;
+
+        // Create point elements
+        polygon.points.forEach((point, index) => {
+          const pointElement = createPointElement(point.x, point.y, polygon, index);
+          polygon.pointElements.push(pointElement);
+        });
+
+        updatePolygonPoints(polygon);
+      });
+      
+      setPolygons(newPolygons);
+      setIsEditingPython(false);
+    } catch (error) {
+      console.error('Error parsing Python string:', error);
+      alert('Error parsing Python string. Please check the format.');
+    }
   };
 
   const applySVGStringEdit = () => {
@@ -747,6 +855,16 @@ function App() {
   const cancelEditingSVG = () => {
     setIsEditingSVG(false);
     setEditingSVGString('');
+  };
+
+  const startEditingPython = () => {
+    setEditingPythonString(generatePythonCode());
+    setIsEditingPython(true);
+  };
+
+  const cancelEditingPython = () => {
+    setIsEditingPython(false);
+    setEditingPythonString('');
   };
 
   const copyToClipboard = async () => {
@@ -1101,16 +1219,54 @@ function App() {
 
               <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2 text-gray-800">Python Format</h3>
-                <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
-                  <pre>{generatePythonCode()}</pre>
-                </div>
-                <button
-                  onClick={copyToClipboard}
-                  className="mt-2 py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded flex items-center gap-1 transition-colors"
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? 'Copied!' : 'Copy to Clipboard'}
-                </button>
+                {!isEditingPython ? (
+                  <>
+                    <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
+                      <pre>{generatePythonCode()}</pre>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={copyToClipboard}
+                        className="py-1 px-3 bg-green-600 hover:bg-blue-700 text-white text-sm rounded flex items-center gap-1 transition-colors"
+                      >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied ? 'Copied!' : 'Copy to Clipboard'}
+                      </button>
+                      <button
+                        onClick={startEditingPython}
+                        className="py-1 px-3 bg-blue-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                      >
+                        Edit Python Code
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <textarea
+                      value={editingPythonString}
+                      onChange={(e) => setEditingPythonString(e.target.value)}
+                      className="w-full h-32 bg-gray-800 text-green-400 p-3 rounded font-mono text-sm resize-none"
+                      placeholder="Enter Python format (polygon_1 = [(x, y), (x, y), ...])..."
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={applyPythonStringEdit}
+                        className="py-1 px-3 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                      >
+                        Apply Changes
+                      </button>
+                      <button
+                        onClick={cancelEditingPython}
+                        className="py-1 px-3 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Format: [(x, y), (x, y), ...] - Each line represents one polygon as a list of tuples.
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-4">
