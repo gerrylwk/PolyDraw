@@ -10,6 +10,7 @@ interface Polygon {
   id: number;
   name: string;
   points: Point[];
+  color: { r: number; g: number; b: number };
   element?: SVGPolygonElement;
   svg?: SVGSVGElement;
   previewLine?: SVGLineElement;
@@ -61,12 +62,36 @@ function App() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Centralized polygon styling function for consistency and flexibility
+  const applyPolygonStyle = useCallback((polygon: Polygon) => {
+    if (!polygon.element) return;
+
+    const { r, g, b } = polygon.color;
+    const colorString = `rgb(${r}, ${g}, ${b})`;
+
+    // Apply dynamic styles (colors, opacity) via inline attributes
+    polygon.element.setAttribute('fill', colorString);
+    polygon.element.setAttribute('stroke', colorString);
+    polygon.element.setAttribute('fill-opacity', polygonOpacity.toString());
+    
+    // Static styles remain as CSS classes for performance and maintainability
+    polygon.element.setAttribute('class', 'stroke-2');
+    polygon.element.style.vectorEffect = 'non-scaling-stroke';
+
+    // Update name element color to match polygon
+    if (polygon.nameElement) {
+      polygon.nameElement.setAttribute('fill', colorString);
+    }
+  }, [polygonOpacity]);
+
   const updatePolygonPoints = useCallback((polygon: Polygon) => {
     if (!polygon.element) return;
 
     const pointsStr = polygon.points.map(p => `${p.x},${p.y}`).join(' ');
     polygon.element.setAttribute('points', pointsStr);
-    polygon.element.setAttribute('fill-opacity', polygonOpacity.toString());
+    
+    // Apply styling to ensure colors are correct
+    applyPolygonStyle(polygon);
 
     polygon.points.forEach((point, index) => {
       if (polygon.pointElements[index]) {
@@ -81,7 +106,7 @@ function App() {
       polygon.nameElement.setAttribute('y', (firstPoint.y - 15).toString());
       polygon.nameElement.textContent = polygon.name;
     }
-  }, [polygonOpacity]);
+  }, [polygonOpacity, applyPolygonStyle]);
 
   const removePolygon = useCallback((polygon: Polygon) => {
     if (polygon.svg && canvasRef.current) {
@@ -151,6 +176,18 @@ function App() {
       setSelectedPolygon(updatedPolygon);
     }
   }, [selectedPolygon, removePolygon, updatePolygonPoints]);
+
+  const updatePolygonColor = useCallback((polygonId: number, color: { r: number; g: number; b: number }) => {
+    setPolygons(prev => prev.map(polygon => {
+      if (polygon.id === polygonId) {
+        const updatedPolygon = { ...polygon, color };
+        // Apply complete styling using centralized function
+        applyPolygonStyle(updatedPolygon);
+        return updatedPolygon;
+      }
+      return polygon;
+    }));
+  }, [applyPolygonStyle]);
 
   // Handle keyboard events for delete and escape functionality
   useEffect(() => {
@@ -413,6 +450,7 @@ function App() {
       id: Date.now(),
       name: `Polygon ${polygons.length + 1}`,
       points: [{ x, y }],
+      color: { r: 59, g: 130, b: 246 }, // Default blue color
       pointElements: []
     };
 
@@ -422,9 +460,7 @@ function App() {
     svg.style.transformOrigin = '0 0';
 
     const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygonElement.setAttribute('class', 'fill-blue-500 stroke-blue-500 stroke-2');
-    polygonElement.setAttribute('fill-opacity', polygonOpacity.toString());
-    polygonElement.style.vectorEffect = 'non-scaling-stroke';
+    // Initial setup - styling will be applied via applyPolygonStyle
 
     const previewLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
     previewLine.setAttribute('stroke', '#3b82f6');
@@ -433,7 +469,6 @@ function App() {
 
     const nameElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
     nameElement.setAttribute('class', 'polygon-name');
-    nameElement.setAttribute('fill', '#3b82f6');
     nameElement.setAttribute('font-size', '12');
     nameElement.setAttribute('font-weight', 'bold');
     nameElement.setAttribute('x', x.toString());
@@ -456,6 +491,8 @@ function App() {
     const pointElement = createPointElement(x, y, newPolygon, 0);
     newPolygon.pointElements.push(pointElement);
 
+    // Apply initial styling and update points
+    applyPolygonStyle(newPolygon);
     updatePolygonPoints(newPolygon);
     setPolygons(prev => [...prev, newPolygon]);
     setCurrentPolygon(newPolygon);
@@ -587,17 +624,16 @@ function App() {
     setSelectedPoint(null);
   };
 
-  const updateAllPolygonOpacity = (opacity: number) => {
+  const updateAllPolygonOpacity = () => {
     polygons.forEach(polygon => {
-      if (polygon.element) {
-        polygon.element.setAttribute('fill-opacity', opacity.toString());
-      }
+      // Use centralized styling function to maintain consistency
+      applyPolygonStyle(polygon);
     });
   };
 
   const handleOpacityChange = (newOpacity: number) => {
     setPolygonOpacity(newOpacity);
-    updateAllPolygonOpacity(newOpacity);
+    updateAllPolygonOpacity();
   };
 
   const generatePythonCode = () => {
@@ -687,6 +723,7 @@ function App() {
               id: Date.now() + index,
               name: `Polygon ${index + 1}`,
               points,
+              color: { r: 59, g: 130, b: 246 }, // Default blue color
               pointElements: []
             };
             
@@ -725,6 +762,7 @@ function App() {
           id: Date.now() + index,
           name: `Polygon ${index + 1}`,
           points,
+          color: { r: 59, g: 130, b: 246 }, // Default blue color
           pointElements: []
         };
         
@@ -750,13 +788,10 @@ function App() {
         svg.style.transformOrigin = '0 0';
 
         const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        polygonElement.setAttribute('class', 'fill-blue-500 stroke-blue-500 stroke-2');
-        polygonElement.setAttribute('fill-opacity', polygonOpacity.toString());
-        polygonElement.style.vectorEffect = 'non-scaling-stroke';
+        // Styling will be applied via applyPolygonStyle
 
         const nameElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
         nameElement.setAttribute('class', 'polygon-name');
-        nameElement.setAttribute('fill', '#3b82f6');
         nameElement.setAttribute('font-size', '12');
         nameElement.setAttribute('font-weight', 'bold');
         nameElement.setAttribute('x', polygon.points[0].x.toString());
@@ -780,6 +815,8 @@ function App() {
           polygon.pointElements.push(pointElement);
         });
 
+        // Apply styling and update points
+        applyPolygonStyle(polygon);
         updatePolygonPoints(polygon);
       });
       
@@ -806,13 +843,10 @@ function App() {
         svg.style.transformOrigin = '0 0';
 
         const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        polygonElement.setAttribute('class', 'fill-blue-500 stroke-blue-500 stroke-2');
-        polygonElement.setAttribute('fill-opacity', polygonOpacity.toString());
-        polygonElement.style.vectorEffect = 'non-scaling-stroke';
+        // Styling will be applied via applyPolygonStyle
 
         const nameElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
         nameElement.setAttribute('class', 'polygon-name');
-        nameElement.setAttribute('fill', '#3b82f6');
         nameElement.setAttribute('font-size', '12');
         nameElement.setAttribute('font-weight', 'bold');
         nameElement.setAttribute('x', polygon.points[0].x.toString());
@@ -836,6 +870,8 @@ function App() {
           polygon.pointElements.push(pointElement);
         });
 
+        // Apply styling and update points
+        applyPolygonStyle(polygon);
         updatePolygonPoints(polygon);
       });
       
@@ -1329,26 +1365,88 @@ function App() {
                     <div className="space-y-3">
                       {polygons.map((polygon) => (
                         <div key={polygon.id} className="border-b border-gray-200 pb-3 mb-3 last:border-b-0">
-                          <div className="font-medium text-gray-700 mb-2 flex items-center justify-between gap-2">
-                            <input
-                              type="text"
-                              value={polygon.name}
-                              onChange={(e) => {
-                                const updatedPolygon = { ...polygon, name: e.target.value };
-                                setPolygons(prev => prev.map(p => p.id === polygon.id ? updatedPolygon : p));
-                                if (updatedPolygon.nameElement) {
-                                  updatedPolygon.nameElement.textContent = e.target.value;
-                                }
-                              }}
-                              className="text-sm border rounded px-2 py-1 flex-1"
-                            />
-                            <button
-                              onClick={() => removePolygon(polygon)}
-                              className="bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:scale-110"
-                              title="Delete polygon"
-                            >
-                              <Trash2 size={12} />
-                            </button>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Name
+                              </label>
+                              <input
+                                type="text"
+                                value={polygon.name}
+                                onChange={(e) => {
+                                  const updatedPolygon = { ...polygon, name: e.target.value };
+                                  setPolygons(prev => prev.map(p => p.id === polygon.id ? updatedPolygon : p));
+                                  if (updatedPolygon.nameElement) {
+                                    updatedPolygon.nameElement.textContent = e.target.value;
+                                  }
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Color (RGB)
+                              </label>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Red</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="255"
+                                    value={polygon.color.r}
+                                    onChange={(e) => updatePolygonColor(polygon.id, {
+                                      ...polygon.color,
+                                      r: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                    })}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Green</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="255"
+                                    value={polygon.color.g}
+                                    onChange={(e) => updatePolygonColor(polygon.id, {
+                                      ...polygon.color,
+                                      g: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                    })}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Blue</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="255"
+                                    value={polygon.color.b}
+                                    onChange={(e) => updatePolygonColor(polygon.id, {
+                                      ...polygon.color,
+                                      b: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                    })}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                </div>
+                              </div>
+                              <div 
+                                className="mt-2 h-6 rounded border border-gray-300"
+                                style={{ backgroundColor: `rgb(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b})` }}
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2">
+                              <button
+                                onClick={() => removePolygon(polygon)}
+                                className="bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:scale-110"
+                                title="Delete polygon"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                             {polygon.points.map((point, pointIndex) => (
