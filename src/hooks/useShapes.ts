@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Shape, PolygonShape, Point, DraggedPoint, ShapeStyle } from '../types';
 import { createPolygonShape } from '../utils/shapeUtils';
 import { createShapeSVG, updateShapeDisplay } from '../utils/shapeRenderer';
+import { straightenLine } from '../utils/coordinateUtils';
 
 export interface UseShapesReturn {
   shapes: Shape[];
@@ -58,7 +59,7 @@ export const useShapes = (): UseShapesReturn => {
   const updateShape = useCallback((shapeId: string, updates: Partial<Shape>) => {
     setShapes(prev => prev.map(shape => {
       if (shape.id === shapeId) {
-        const updatedShape = { ...shape, ...updates };
+        const updatedShape = { ...shape, ...updates } as Shape;
         updateShapeDisplay(updatedShape);
         return updatedShape;
       }
@@ -75,8 +76,8 @@ export const useShapes = (): UseShapesReturn => {
   const createPointElement = useCallback((
     x: number, 
     y: number, 
-    shape: Shape, 
-    index: number,
+    _shape: Shape, 
+    _index: number,
     canvasRef: React.RefObject<HTMLDivElement>
   ): HTMLDivElement => {
     const point = document.createElement('div');
@@ -133,7 +134,6 @@ export const useShapes = (): UseShapesReturn => {
     // Apply line straightening if Shift is pressed and we have at least one point
     if (isShiftPressed && currentShape.points.length > 0) {
       const lastPoint = currentShape.points[currentShape.points.length - 1];
-      const { straightenLine } = require('../utils/coordinateUtils');
       finalPosition = straightenLine(lastPoint, point);
     }
 
