@@ -13,7 +13,8 @@ import {
 import { 
   getMousePosition, 
   findPointAt, 
-  straightenLine 
+  straightenLine,
+  createShapeSVG
 } from './utils';
 import { CanvasSettings, Point } from './types';
 
@@ -409,6 +410,39 @@ function App() {
                 shapes={shapes.shapes}
                 imageInfo={canvas.imageInfo}
                 canvasSettings={canvasSettings}
+                onShapesReplace={(newShapes) => {
+                  // Add each shape to the canvas with proper SVG rendering
+                  newShapes.forEach(shape => {
+                    // Create SVG elements for the shape
+                    const svg = createShapeSVG(shape);
+                    
+                    // Add SVG to canvas
+                    if (canvas.canvasRef.current) {
+                      canvas.canvasRef.current.appendChild(svg);
+                    }
+                    
+                    // Create point elements for each point in the shape
+                    const pointElements: HTMLDivElement[] = [];
+                    shape.points.forEach((point) => {
+                      const pointElement = document.createElement('div');
+                      pointElement.className = 'absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-move z-10 hover:scale-150 transition-transform';
+                      pointElement.setAttribute('data-point', 'true');
+                      pointElement.style.left = `${point.x}px`;
+                      pointElement.style.top = `${point.y}px`;
+                      
+                      if (canvas.canvasRef.current) {
+                        canvas.canvasRef.current.appendChild(pointElement);
+                      }
+                      
+                      pointElements.push(pointElement);
+                    });
+                    
+                    // Update shape with point elements
+                    const updatedShape = { ...shape, pointElements };
+                    shapes.addShape(updatedShape);
+                  });
+                }}
+                onClearShapes={shapes.clearAllShapes}
               />
 
               {/* Edit Coordinates Section with Color Controls */}

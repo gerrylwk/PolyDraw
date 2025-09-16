@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Shape, ImageInfo, CanvasSettings } from '../../types';
 import { Button } from '../UI';
+import { parsePythonString, parseSVGString } from '../../utils';
 
 export interface ExportWidgetProps {
   shapes: Shape[];
   imageInfo: ImageInfo;
   canvasSettings: CanvasSettings;
+  onShapesReplace?: (newShapes: Shape[]) => void;
+  onClearShapes?: () => void;
 }
 
 export const ExportWidget: React.FC<ExportWidgetProps> = ({
   shapes,
   imageInfo,
-  canvasSettings
+  canvasSettings,
+  onShapesReplace,
+  onClearShapes
 }) => {
   const [copied, setCopied] = useState(false);
   const [editingSVGString, setEditingSVGString] = useState('');
@@ -88,6 +93,56 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
     setIsEditingPython(true);
   };
 
+  const applyPythonChanges = () => {
+    try {
+      if (onClearShapes) {
+        onClearShapes();
+      }
+      
+      // Parse the new shapes
+      const newShapes = parsePythonString(
+        editingPythonString, 
+        canvasSettings.normalize, 
+        imageInfo.element ? imageInfo : undefined
+      );
+      
+      if (onShapesReplace) {
+        onShapesReplace(newShapes);
+      }
+      
+      setIsEditingPython(false);
+      setEditingPythonString('');
+    } catch (error) {
+      console.error('Error parsing Python string:', error);
+      alert('Error parsing Python string. Please check the format.');
+    }
+  };
+
+  const applySVGChanges = () => {
+    try {
+      if (onClearShapes) {
+        onClearShapes();
+      }
+      
+      // Parse the new shapes
+      const newShapes = parseSVGString(
+        editingSVGString, 
+        canvasSettings.normalize, 
+        imageInfo.element ? imageInfo : undefined
+      );
+      
+      if (onShapesReplace) {
+        onShapesReplace(newShapes);
+      }
+      
+      setIsEditingSVG(false);
+      setEditingSVGString('');
+    } catch (error) {
+      console.error('Error parsing SVG string:', error);
+      alert('Error parsing SVG string. Please check the format.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Python Format */}
@@ -126,10 +181,7 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
             />
             <div className="flex gap-2 mt-2">
               <Button
-                onClick={() => {
-                  // Apply changes logic would go here
-                  setIsEditingPython(false);
-                }}
+                onClick={applyPythonChanges}
                 variant="primary"
                 size="sm"
               >
@@ -189,10 +241,7 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
             />
             <div className="flex gap-2 mt-2">
               <Button
-                onClick={() => {
-                  // Apply changes logic would go here
-                  setIsEditingSVG(false);
-                }}
+                onClick={applySVGChanges}
                 variant="primary"
                 size="sm"
               >
