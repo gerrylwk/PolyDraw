@@ -390,6 +390,7 @@ interface Polygon {
 - Plugin system for custom tools
 - **Advanced Color Features**: Color palettes, color picker, HSL support
 - **Style Presets**: Save/load polygon style templates
+- Export to SVG / PNG / different formats for clients
 
 ### Performance Improvements
 - Canvas-based rendering for large datasets
