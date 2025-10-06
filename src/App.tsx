@@ -410,6 +410,7 @@ function App() {
                 shapes={shapes.shapes}
                 imageInfo={canvas.imageInfo}
                 canvasSettings={canvasSettings}
+                currentOpacity={polygonOpacity}
                 onShapesReplace={(newShapes) => {
                   // Add each shape to the canvas with proper SVG rendering
                   newShapes.forEach(shape => {

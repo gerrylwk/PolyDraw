@@ -8,6 +8,7 @@ export interface ExportWidgetProps {
   shapes: Shape[];
   imageInfo: ImageInfo;
   canvasSettings: CanvasSettings;
+  currentOpacity: number;
   onShapesReplace?: (newShapes: Shape[]) => void;
   onClearShapes?: () => void;
 }
@@ -16,6 +17,7 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
   shapes,
   imageInfo,
   canvasSettings,
+  currentOpacity,
   onShapesReplace,
   onClearShapes
 }) => {
@@ -103,7 +105,8 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
       const newShapes = parsePythonString(
         editingPythonString, 
         canvasSettings.normalize, 
-        imageInfo.element ? imageInfo : undefined
+        imageInfo.element ? imageInfo : undefined,
+        currentOpacity
       );
       
       if (onShapesReplace) {
@@ -128,7 +131,8 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
       const newShapes = parseSVGString(
         editingSVGString, 
         canvasSettings.normalize, 
-        imageInfo.element ? imageInfo : undefined
+        imageInfo.element ? imageInfo : undefined,
+        currentOpacity
       );
       
       if (onShapesReplace) {

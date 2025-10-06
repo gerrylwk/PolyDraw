@@ -22,10 +22,10 @@ interface ImageInfo {
 /**
  * Converts a legacy polygon format to the current Shape system
  */
-const convertLegacyPolygonToShape = (polygon: LegacyPolygon): PolygonShape => {
+const convertLegacyPolygonToShape = (polygon: LegacyPolygon, opacity: number = 1): PolygonShape => {
   const style: ShapeStyle = {
     color: polygon.color,
-    opacity: 1,
+    opacity: opacity,
     strokeWidth: 2
   };
 
@@ -135,12 +135,14 @@ export const generateSVGStringFromPolygons = (
  * @param pythonString - String containing Python list format coordinates
  * @param normalize - Whether coordinates are normalized and need denormalization
  * @param imageInfo - Image dimensions for denormalization
+ * @param opacity - Opacity to apply to created shapes (defaults to 1)
  * @returns Array of parsed shapes
  */
 export const parsePythonString = (
   pythonString: string,
   normalize: boolean = false,
-  imageInfo?: ImageInfo
+  imageInfo?: ImageInfo,
+  opacity: number = 1
 ): PolygonShape[] => {
   // Parse Python list format coordinates
   const lines = pythonString.split('\n').filter(line => {
@@ -192,7 +194,7 @@ export const parsePythonString = (
   });
   
   // Convert legacy polygons to new shapes
-  return newPolygons.map(convertLegacyPolygonToShape);
+  return newPolygons.map(polygon => convertLegacyPolygonToShape(polygon, opacity));
 };
 
 /**
@@ -200,12 +202,14 @@ export const parsePythonString = (
  * @param svgString - String containing space-separated coordinates
  * @param normalize - Whether coordinates are normalized and need denormalization
  * @param imageInfo - Image dimensions for denormalization
+ * @param opacity - Opacity to apply to created shapes (defaults to 1)
  * @returns Array of parsed shapes
  */
 export const parseSVGString = (
   svgString: string,
   normalize: boolean = false,
-  imageInfo?: ImageInfo
+  imageInfo?: ImageInfo,
+  opacity: number = 1
 ): PolygonShape[] => {
   // Parse space-separated coordinate format
   const lines = svgString.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
@@ -242,7 +246,7 @@ export const parseSVGString = (
   });
   
   // Convert legacy polygons to new shapes
-  return newPolygons.map(convertLegacyPolygonToShape);
+  return newPolygons.map(polygon => convertLegacyPolygonToShape(polygon, opacity));
 };
 
 // ==== LEGACY COMPATIBILITY FUNCTIONS ====
@@ -257,7 +261,7 @@ export const parsePythonStringToPolygons = (
   imageInfo?: ImageInfo
 ): LegacyPolygon[] => {
   // Call the main function and convert back to legacy format  
-  const shapes = parsePythonString(pythonString, normalize, imageInfo);
+  const shapes = parsePythonString(pythonString, normalize, imageInfo, 1);
   return shapes.map(convertShapeToLegacyPolygon);
 };
 
@@ -271,6 +275,6 @@ export const parseSVGStringToPolygons = (
   imageInfo?: ImageInfo
 ): LegacyPolygon[] => {
   // Call the main function and convert back to legacy format
-  const shapes = parseSVGString(svgString, normalize, imageInfo);
+  const shapes = parseSVGString(svgString, normalize, imageInfo, 1);
   return shapes.map(convertShapeToLegacyPolygon);
 };
