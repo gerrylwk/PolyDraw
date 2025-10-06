@@ -1,7 +1,7 @@
 import { Point, Shape, PolygonShape, ShapeStyle } from '../types';
 
-// Polygon interface for backward compatibility with older data formats
-interface LegacyPolygon {
+// Polygon interface for coordinate parsing and conversion
+interface Polygon {
   id: number;
   name: string;
   points: Point[];
@@ -20,9 +20,9 @@ interface ImageInfo {
 }
 
 /**
- * Converts a legacy polygon format to the current Shape system
+ * Converts a polygon to the current Shape system
  */
-const convertLegacyPolygonToShape = (polygon: LegacyPolygon, opacity: number = 1): PolygonShape => {
+const convertPolygonToShape = (polygon: Polygon, opacity: number = 1): PolygonShape => {
   const style: ShapeStyle = {
     color: polygon.color,
     opacity: opacity,
@@ -44,9 +44,9 @@ const convertLegacyPolygonToShape = (polygon: LegacyPolygon, opacity: number = 1
 };
 
 /**
- * Converts a Shape to legacy polygon format for backward compatibility
+ * Converts a Shape to polygon format
  */
-const convertShapeToLegacyPolygon = (shape: PolygonShape): LegacyPolygon => {
+const convertShapeToPolygon = (shape: PolygonShape): Polygon => {
   return {
     id: parseInt(shape.id) || Date.now(),
     name: shape.name,
@@ -96,14 +96,14 @@ export const generateSVGString = (
 };
 
 /**
- * Generates an SVG coordinate string from legacy polygons (for backward compatibility)
- * @param polygons - Array of legacy polygons to convert
+ * Generates an SVG coordinate string from polygons
+ * @param polygons - Array of polygons to convert
  * @param normalize - Whether to normalize coordinates (0-1 range)
  * @param imageInfo - Image dimensions for normalization
  * @returns SVG coordinate string
  */
 export const generateSVGStringFromPolygons = (
-  polygons: LegacyPolygon[],
+  polygons: Polygon[],
   normalize: boolean = false,
   imageInfo?: ImageInfo
 ): string => {
@@ -149,7 +149,7 @@ export const parsePythonString = (
     const trimmed = line.trim();
     return trimmed && !trimmed.startsWith('#');
   });
-  const newPolygons: LegacyPolygon[] = [];
+  const newPolygons: Polygon[] = [];
   
   lines.forEach((line, index) => {
     // Match Python list format: [(x, y), (x, y), ...] or with assignment
@@ -179,7 +179,7 @@ export const parsePythonString = (
         });
         
         if (points.length >= 3) {
-          const newPolygon: LegacyPolygon = {
+          const newPolygon: Polygon = {
             id: Date.now() + Math.floor(Math.random() * 1000000) + index,
             name: `Polygon ${index + 1}`,
             points,
@@ -193,8 +193,8 @@ export const parsePythonString = (
     }
   });
   
-  // Convert legacy polygons to new shapes
-  return newPolygons.map(polygon => convertLegacyPolygonToShape(polygon, opacity));
+  // Convert polygons to shapes
+  return newPolygons.map(polygon => convertPolygonToShape(polygon, opacity));
 };
 
 /**
@@ -213,7 +213,7 @@ export const parseSVGString = (
 ): PolygonShape[] => {
   // Parse space-separated coordinate format
   const lines = svgString.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
-  const newPolygons: LegacyPolygon[] = [];
+  const newPolygons: Polygon[] = [];
   
   lines.forEach((line, index) => {
     const coords = line.trim().split(/\s+/).map(coord => parseFloat(coord)).filter(num => !isNaN(num));
@@ -233,7 +233,7 @@ export const parseSVGString = (
         points.push({ x, y });
       }
       
-      const newPolygon: LegacyPolygon = {
+      const newPolygon: Polygon = {
         id: Date.now() + Math.floor(Math.random() * 1000000) + index,
         name: `Polygon ${index + 1}`,
         points,
@@ -245,36 +245,36 @@ export const parseSVGString = (
     }
   });
   
-  // Convert legacy polygons to new shapes
-  return newPolygons.map(polygon => convertLegacyPolygonToShape(polygon, opacity));
+  // Convert polygons to shapes
+  return newPolygons.map(polygon => convertPolygonToShape(polygon, opacity));
 };
 
-// ==== LEGACY COMPATIBILITY FUNCTIONS ====
+// ==== POLYGON FORMAT FUNCTIONS ====
 
 /**
- * Parses a Python coordinate string into legacy polygons (for backward compatibility)
- * Uses the exact same logic as the main parsePythonString but returns legacy format
+ * Parses a Python coordinate string into polygons
+ * Uses the exact same logic as the main parsePythonString but returns polygon format
  */
 export const parsePythonStringToPolygons = (
   pythonString: string,
   normalize: boolean = false,
   imageInfo?: ImageInfo
-): LegacyPolygon[] => {
-  // Call the main function and convert back to legacy format  
+): Polygon[] => {
+  // Call the main function and convert back to polygon format  
   const shapes = parsePythonString(pythonString, normalize, imageInfo, 1);
-  return shapes.map(convertShapeToLegacyPolygon);
+  return shapes.map(convertShapeToPolygon);
 };
 
 /**
- * Parses an SVG coordinate string into legacy polygons (for backward compatibility)
- * Uses the exact same logic as the main parseSVGString but returns legacy format
+ * Parses an SVG coordinate string into polygons
+ * Uses the exact same logic as the main parseSVGString but returns polygon format
  */
 export const parseSVGStringToPolygons = (
   svgString: string,
   normalize: boolean = false,
   imageInfo?: ImageInfo
-): LegacyPolygon[] => {
-  // Call the main function and convert back to legacy format
+): Polygon[] => {
+  // Call the main function and convert back to polygon format
   const shapes = parseSVGString(svgString, normalize, imageInfo, 1);
-  return shapes.map(convertShapeToLegacyPolygon);
+  return shapes.map(convertShapeToPolygon);
 };
