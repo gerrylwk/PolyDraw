@@ -141,8 +141,8 @@ function App() {
         if (polygonShape.previewLine) {
           const lastPoint = shapes.currentShape.points[shapes.currentShape.points.length - 1];
           let previewPosition = position;
-          
-          // Apply line straightening to preview line if Shift is pressed
+      
+      // Apply line straightening to preview line if Shift is pressed
           if (tools.toolState.isShiftPressed) {
             previewPosition = straightenLine(lastPoint, position);
           }
@@ -202,23 +202,23 @@ function App() {
   }, [shapes.shapes, shapes.updateShapeStyle]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-6">
-        <header className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">PolyDraw</h1>
-          <p className="text-gray-600">SVG Polygon Editor - Click and drag points, press Delete to remove selected point</p>
+    <div className="polydraw-app min-h-screen bg-gray-100" data-testid="polydraw-app">
+      <div className="polydraw-app__container container mx-auto px-4 py-6">
+        <header className="polydraw-app__header mb-6">
+          <h1 className="polydraw-app__title text-3xl font-bold text-gray-800">PolyDraw</h1>
+          <p className="polydraw-app__description text-gray-600">SVG Polygon Editor - Click and drag points, press Delete to remove selected point</p>
         </header>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="polydraw-app__layout flex flex-col lg:flex-row gap-6">
           {/* Left Panel - Tools */}
-          <div className="w-full lg:w-64 bg-white rounded-lg shadow p-4">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Tools</h2>
+          <aside className="polydraw-sidebar w-full lg:w-64 bg-white rounded-lg shadow p-4" data-testid="polydraw-sidebar">
+            <h2 className="polydraw-sidebar__title text-xl font-semibold mb-4 text-gray-800">Tools</h2>
             
-            <div className="space-y-4">
-              {/* File Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
-                <div className="flex items-center gap-2">
+            <div className="polydraw-sidebar__sections space-y-4">
+              {/* File Upload Section */}
+              <section className="polydraw-file-upload-section">
+                <h3 className="polydraw-section-title block text-sm font-medium text-gray-700 mb-2">Upload Image</h3>
+                <div className="polydraw-file-upload-controls flex items-center gap-2">
                   <input
                     type="file"
                     ref={React.useRef<HTMLInputElement>(null)}
@@ -227,78 +227,87 @@ function App() {
                       const file = e.target.files?.[0];
                       if (file) canvas.uploadImage(file);
                     }}
-                    className="hidden"
+                    className="polydraw-file-input hidden"
+                    data-testid="file-input"
                   />
                   <button
                     onClick={() => {
                       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
                       input?.click();
                     }}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors"
+                    className="polydraw-file-upload-button flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors"
+                    data-testid="file-upload-button"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="polydraw-upload-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                       <polyline points="7,10 12,15 17,10"/>
                       <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    <span>Choose File</span>
+                    <span className="polydraw-button-text">Choose File</span>
                   </button>
                 </div>
-                <div className="text-xs text-gray-500 mt-1 truncate">{canvas.imageInfo.fileName}</div>
+                <div className="polydraw-file-name text-xs text-gray-500 mt-1 truncate" data-testid="file-name">
+                  {canvas.imageInfo.fileName}
               </div>
+              </section>
 
-              {/* View Type */}
-              <div className="border-t border-gray-200 pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">View Type</label>
+              {/* View Type Section */}
+              <section className="polydraw-view-type-section border-t border-gray-200 pt-4">
+                <h3 className="polydraw-section-title block text-sm font-medium text-gray-700 mb-2">View Type</h3>
                 <select
                   value={canvasSettings.viewType}
                   onChange={(e) => handleCanvasSettingsChange({ viewType: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+                  className="polydraw-view-type-select w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+                  data-testid="view-type-select"
                 >
                   <option value="static">Static View</option>
                   <option value="double-panoramic">Double Panoramic View</option>
                 </select>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="polydraw-view-type-description text-xs text-gray-500 mt-1">
                   {canvasSettings.viewType === 'static' 
                     ? 'Normal single image view' 
                     : 'Top and bottom halves are separate images'
                   }
                 </div>
-              </div>
+              </section>
 
-              {/* Drawing Tools */}
-              <div className="border-t border-gray-200 pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Drawing Tools</label>
-                <div className="grid grid-cols-2 gap-2">
+              {/* Drawing Tools Section */}
+              <section className="polydraw-drawing-tools-section border-t border-gray-200 pt-4">
+                <h3 className="polydraw-section-title block text-sm font-medium text-gray-700 mb-2">Drawing Tools</h3>
+                <div className="polydraw-tool-buttons grid grid-cols-2 gap-2">
                   <button
                     onClick={() => tools.setCurrentTool('select')}
-                    className={`flex items-center justify-center gap-2 py-2 px-4 rounded transition-colors ${
+                    className={`polydraw-tool-button polydraw-tool-button--select flex items-center justify-center gap-2 py-2 px-4 rounded transition-colors ${
                       tools.toolState.currentTool === 'select'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                        ? 'polydraw-tool-button--active bg-blue-500 text-white'
+                        : 'polydraw-tool-button--inactive bg-gray-200 hover:bg-gray-300 text-gray-800'
                     }`}
+                    data-testid="tool-button-select"
+                    data-tool="select"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="polydraw-tool-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
                     </svg>
-                    <span>Select</span>
+                    <span className="polydraw-tool-label">Select</span>
                   </button>
                   <button
                     onClick={() => tools.setCurrentTool('polygon')}
-                    className={`flex items-center justify-center gap-2 py-2 px-4 rounded transition-colors ${
+                    className={`polydraw-tool-button polydraw-tool-button--polygon flex items-center justify-center gap-2 py-2 px-4 rounded transition-colors ${
                       tools.toolState.currentTool === 'polygon'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                        ? 'polydraw-tool-button--active bg-blue-500 text-white'
+                        : 'polydraw-tool-button--inactive bg-gray-200 hover:bg-gray-300 text-gray-800'
                     }`}
+                    data-testid="tool-button-polygon"
+                    data-tool="polygon"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="polydraw-tool-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="5,12 19,12"/>
                       <polyline points="12,5 12,19"/>
                     </svg>
-                    <span>Polygon</span>
+                    <span className="polydraw-tool-label">Polygon</span>
                   </button>
                 </div>
-              </div>
+              </section>
 
               {/* View Controls */}
               <ViewControlsWidget
@@ -310,31 +319,35 @@ function App() {
                 onClearAll={shapes.clearAllShapes}
               />
 
-              {/* Line Straightening Info */}
-              <div className="border-t border-gray-200 pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Line Straightening</label>
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-3 h-3 rounded-full ${tools.toolState.isShiftPressed ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <span className="text-sm font-medium">
+              {/* Line Straightening Info Section */}
+              <section className="polydraw-line-straightening-section border-t border-gray-200 pt-4">
+                <h3 className="polydraw-section-title block text-sm font-medium text-gray-700 mb-2">Line Straightening</h3>
+                <div className="polydraw-shift-status-panel bg-blue-50 p-3 rounded-lg">
+                  <div className="polydraw-shift-indicator flex items-center gap-2 mb-2">
+                    <div className={`polydraw-shift-status-dot w-3 h-3 rounded-full ${
+                      tools.toolState.isShiftPressed ? 'polydraw-shift-active bg-green-500' : 'polydraw-shift-inactive bg-gray-300'
+                    }`}></div>
+                    <span className="polydraw-shift-status-text text-sm font-medium">
                       {tools.toolState.isShiftPressed ? 'Shift Active' : 'Shift Inactive'}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-600">
-                    <p className="mb-1">Hold <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">Shift</kbd> while drawing to straighten lines:</p>
-                    <ul className="list-disc list-inside space-y-0.5 ml-2">
-                      <li>Horizontal lines</li>
-                      <li>Vertical lines</li>
-                      <li>45° diagonal lines</li>
+                  <div className="polydraw-shift-instructions text-xs text-gray-600">
+                    <p className="polydraw-shift-hint mb-1">
+                      Hold <kbd className="polydraw-kbd px-1 py-0.5 bg-gray-200 rounded text-xs">Shift</kbd> while drawing to straighten lines:
+                    </p>
+                    <ul className="polydraw-line-types list-disc list-inside space-y-0.5 ml-2">
+                      <li className="polydraw-line-type">Horizontal lines</li>
+                      <li className="polydraw-line-type">Vertical lines</li>
+                      <li className="polydraw-line-type">45° diagonal lines</li>
                     </ul>
                   </div>
                 </div>
-              </div>
+              </section>
             </div>
-          </div>
+          </aside>
 
           {/* Main Canvas Area */}
-          <div className="flex-1">
+          <main className="polydraw-main-content flex-1" data-testid="polydraw-main-content">
             <Canvas
               canvasState={canvas.canvasState}
               imageInfo={canvas.imageInfo}
@@ -345,65 +358,71 @@ function App() {
               draggedPoint={tools.draggedPoint}
               canvasContainerRef={canvas.canvasContainerRef}
               canvasRef={canvas.canvasRef}
-              onMouseDown={handleCanvasMouseDown}
-              onMouseMove={handleCanvasMouseMove}
-              onMouseUp={handleCanvasMouseUp}
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
               onMouseEnter={() => canvas.setMouseOverCanvas(true)}
-              onMouseLeave={() => {
+                onMouseLeave={() => {
                 canvas.setMouseOverCanvas(false);
-                handleCanvasMouseUp();
+                  handleCanvasMouseUp();
               }}
             />
 
             {/* Coordinates Panel */}
-            <div className="mt-4 bg-white rounded-lg shadow p-4">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Polygon Coordinates</h2>
+            <section className="polydraw-coordinates-panel mt-4 bg-white rounded-lg shadow p-4" data-testid="coordinates-panel">
+              <h2 className="polydraw-panel-title text-xl font-semibold mb-4 text-gray-800">Polygon Coordinates</h2>
 
-              <div className="flex items-center gap-2 mb-3">
-                <label className="text-sm font-medium text-gray-700">Normalize Coordinates:</label>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={canvasSettings.normalize}
-                    onChange={(e) => handleCanvasSettingsChange({ normalize: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center gap-2 mb-3">
-                <label className="text-sm font-medium text-gray-700">Snap to Image Edges:</label>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={canvasSettings.snapToEdge}
-                    onChange={(e) => handleCanvasSettingsChange({ snapToEdge: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {canvasSettings.snapToEdge && (
-                <div className="mb-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Snap Distance: {canvasSettings.snapThreshold}px
+              {/* Canvas Settings */}
+              <div className="polydraw-canvas-settings space-y-3 mb-4">
+                <div className="polydraw-normalize-setting flex items-center gap-2">
+                  <label className="polydraw-setting-label text-sm font-medium text-gray-700">Normalize Coordinates:</label>
+                  <label className="polydraw-toggle-switch relative inline-flex items-center cursor-pointer" data-testid="normalize-toggle">
+                    <input
+                      type="checkbox"
+                      checked={canvasSettings.normalize}
+                      onChange={(e) => handleCanvasSettingsChange({ normalize: e.target.checked })}
+                      className="polydraw-toggle-input sr-only peer"
+                      data-testid="normalize-checkbox"
+                    />
+                    <div className="polydraw-toggle-track w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
-                  <input
-                    type="range"
-                    min="5"
-                    max="50"
-                    value={canvasSettings.snapThreshold}
-                    onChange={(e) => handleCanvasSettingsChange({ snapThreshold: parseInt(e.target.value) })}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>5px</span>
-                    <span>50px</span>
-                  </div>
                 </div>
-              )}
+
+                <div className="polydraw-snap-setting flex items-center gap-2">
+                  <label className="polydraw-setting-label text-sm font-medium text-gray-700">Snap to Image Edges:</label>
+                  <label className="polydraw-toggle-switch relative inline-flex items-center cursor-pointer" data-testid="snap-toggle">
+                    <input
+                      type="checkbox"
+                      checked={canvasSettings.snapToEdge}
+                      onChange={(e) => handleCanvasSettingsChange({ snapToEdge: e.target.checked })}
+                      className="polydraw-toggle-input sr-only peer"
+                      data-testid="snap-checkbox"
+                    />
+                    <div className="polydraw-toggle-track w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                {canvasSettings.snapToEdge && (
+                  <div className="polydraw-snap-distance-setting">
+                    <label className="polydraw-setting-label block text-sm font-medium text-gray-700 mb-1">
+                      Snap Distance: <span className="polydraw-snap-value">{canvasSettings.snapThreshold}px</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      value={canvasSettings.snapThreshold}
+                      onChange={(e) => handleCanvasSettingsChange({ snapThreshold: parseInt(e.target.value) })}
+                      className="polydraw-snap-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      data-testid="snap-distance-slider"
+                    />
+                    <div className="polydraw-slider-range flex justify-between text-xs text-gray-500 mt-1">
+                      <span className="polydraw-range-min">5px</span>
+                      <span className="polydraw-range-max">50px</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Export Widgets */}
               <ExportWidget
@@ -447,35 +466,38 @@ function App() {
               />
 
               {/* Edit Coordinates Section with Color Controls */}
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2 text-gray-800">Edit Coordinates</h3>
-                <div className="coordinates-panel bg-gray-50 rounded p-3 max-h-60 overflow-y-auto">
+              <section className="polydraw-shape-editor mt-4">
+                <h3 className="polydraw-section-title text-lg font-semibold mb-2 text-gray-800">Edit Coordinates</h3>
+                <div className="polydraw-shapes-list bg-gray-50 rounded p-3 max-h-60 overflow-y-auto" data-testid="shapes-list">
                   {shapes.shapes.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No polygons created yet</p>
+                    <p className="polydraw-empty-state text-gray-500 text-sm">No polygons created yet</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="polydraw-shapes-container space-y-3">
                       {shapes.shapes.map((shape) => (
-                        <div key={shape.id} className="border-b border-gray-200 pb-3 mb-3 last:border-b-0">
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <article key={shape.id} className="polydraw-shape-item border-b border-gray-200 pb-3 mb-3 last:border-b-0" data-testid={`shape-item-${shape.id}`}>
+                          <div className="polydraw-shape-controls space-y-4">
+                            {/* Shape Name */}
+                            <div className="polydraw-shape-name-control">
+                              <label className="polydraw-control-label block text-sm font-medium text-gray-700 mb-1">
                                 Name
                               </label>
                               <input
                                 type="text"
                                 value={shape.name}
                                 onChange={(e) => handleShapeUpdate(shape.id, { name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="polydraw-shape-name-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                data-testid={`shape-name-input-${shape.id}`}
                               />
                             </div>
                             
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {/* Shape Color Controls */}
+                            <div className="polydraw-shape-color-control">
+                              <label className="polydraw-control-label block text-sm font-medium text-gray-700 mb-2">
                                 Color (RGB)
                               </label>
-                              <div className="grid grid-cols-3 gap-2">
-                                <div>
-                                  <label className="block text-xs text-gray-500 mb-1">Red</label>
+                              <div className="polydraw-color-inputs grid grid-cols-3 gap-2">
+                                <div className="polydraw-color-input-group">
+                                  <label className="polydraw-color-label block text-xs text-gray-500 mb-1">Red</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -487,11 +509,12 @@ function App() {
                                         r: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
                                       }
                                     })}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="polydraw-color-input polydraw-color-input--red w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    data-testid={`color-red-${shape.id}`}
                                   />
                                 </div>
-                                <div>
-                                  <label className="block text-xs text-gray-500 mb-1">Green</label>
+                                <div className="polydraw-color-input-group">
+                                  <label className="polydraw-color-label block text-xs text-gray-500 mb-1">Green</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -503,11 +526,12 @@ function App() {
                                         g: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
                                       }
                                     })}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="polydraw-color-input polydraw-color-input--green w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    data-testid={`color-green-${shape.id}`}
                                   />
                                 </div>
-                                <div>
-                                  <label className="block text-xs text-gray-500 mb-1">Blue</label>
+                                <div className="polydraw-color-input-group">
+                                  <label className="polydraw-color-label block text-xs text-gray-500 mb-1">Blue</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -519,23 +543,27 @@ function App() {
                                         b: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
                                       }
                                     })}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="polydraw-color-input polydraw-color-input--blue w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    data-testid={`color-blue-${shape.id}`}
                                   />
                                 </div>
                               </div>
                               <div 
-                                className="mt-2 h-6 rounded border border-gray-300"
+                                className="polydraw-color-preview mt-2 h-6 rounded border border-gray-300"
                                 style={{ backgroundColor: `rgb(${shape.style.color.r}, ${shape.style.color.g}, ${shape.style.color.b})` }}
+                                data-testid={`color-preview-${shape.id}`}
                               />
                             </div>
 
-                            <div className="flex items-center justify-between gap-2">
+                            {/* Shape Actions */}
+                            <div className="polydraw-shape-actions flex items-center justify-between gap-2">
                               <button
                                 onClick={() => shapes.removeShape(shape)}
-                                className="bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:scale-110"
+                                className="polydraw-delete-shape-button bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:scale-110"
                                 title="Delete polygon"
+                                data-testid={`delete-shape-${shape.id}`}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg className="polydraw-delete-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="3,6 5,6 21,6"/>
                                   <path d="M19,6V20a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6"/>
                                   <path d="M8,6V4a2 2 0 0 1 2,2h4a2 2 0 0 1 2,2V6"/>
@@ -543,12 +571,14 @@ function App() {
                               </button>
                             </div>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          
+                          {/* Point Coordinates */}
+                          <div className="polydraw-point-coordinates grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-4">
                             {shape.points.map((point, pointIndex) => (
-                              <div key={pointIndex} className="bg-gray-100 px-2 py-2 rounded flex items-center gap-2">
-                                <span className="font-mono text-xs min-w-[50px]">P{pointIndex + 1}:</span>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-gray-500">X:</span>
+                              <div key={pointIndex} className="polydraw-point-editor bg-gray-100 px-2 py-2 rounded flex items-center gap-2" data-testid={`point-editor-${shape.id}-${pointIndex}`}>
+                                <span className="polydraw-point-label font-mono text-xs min-w-[50px]">P{pointIndex + 1}:</span>
+                                <div className="polydraw-coordinate-input-group flex items-center gap-1">
+                                  <span className="polydraw-coordinate-label text-xs text-gray-500">X:</span>
                                   <input
                                     type="number"
                                     value={Math.round(point.x)}
@@ -556,12 +586,13 @@ function App() {
                                       const newValue = parseFloat(e.target.value) || 0;
                                       handlePointUpdate(shape.id, pointIndex, { ...point, x: newValue });
                                     }}
-                                    className="w-16 px-1 py-0.5 text-xs border rounded"
+                                    className="polydraw-coordinate-input polydraw-coordinate-input--x w-16 px-1 py-0.5 text-xs border rounded"
                                     step="1"
+                                    data-testid={`point-x-${shape.id}-${pointIndex}`}
                                   />
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-gray-500">Y:</span>
+                                <div className="polydraw-coordinate-input-group flex items-center gap-1">
+                                  <span className="polydraw-coordinate-label text-xs text-gray-500">Y:</span>
                                   <input
                                     type="number"
                                     value={Math.round(point.y)}
@@ -569,21 +600,22 @@ function App() {
                                       const newValue = parseFloat(e.target.value) || 0;
                                       handlePointUpdate(shape.id, pointIndex, { ...point, y: newValue });
                                     }}
-                                    className="w-16 px-1 py-0.5 text-xs border rounded"
+                                    className="polydraw-coordinate-input polydraw-coordinate-input--y w-16 px-1 py-0.5 text-xs border rounded"
                                     step="1"
+                                    data-testid={`point-y-${shape.id}-${pointIndex}`}
                                   />
                                 </div>
                               </div>
                             ))}
                           </div>
-                        </div>
+                        </article>
                       ))}
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
+              </section>
+            </section>
+          </main>
         </div>
       </div>
     </div>

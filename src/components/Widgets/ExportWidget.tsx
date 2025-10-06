@@ -148,21 +148,23 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Python Format */}
-      <div>
-        <h3 className="text-lg font-semibold mb-2 text-gray-800">Python Format</h3>
+    <div className="polydraw-export-widget space-y-6" data-testid="export-widget">
+      {/* Python Format Export Section */}
+      <section className="polydraw-python-export-section">
+        <h3 className="polydraw-section-title text-lg font-semibold mb-2 text-gray-800">Python Format</h3>
         {!isEditingPython ? (
-          <>
-            <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
-              <pre>{generatePythonCode()}</pre>
+          <div className="polydraw-python-display-mode">
+            <div className="polydraw-code-display bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto" data-testid="python-code-display">
+              <pre className="polydraw-code-content">{generatePythonCode()}</pre>
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="polydraw-python-actions flex gap-2 mt-2">
               <Button
                 onClick={() => copyToClipboard(generatePythonCode())}
                 variant="primary"
                 size="sm"
                 icon={copied ? <Check size={14} /> : <Copy size={14} />}
+                className="polydraw-copy-python-button"
+                data-testid="copy-python-button"
               >
                 {copied ? 'Copied!' : 'Copy'}
               </Button>
@@ -170,24 +172,29 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
                 onClick={startEditingPython}
                 variant="secondary"
                 size="sm"
+                className="polydraw-edit-python-button"
+                data-testid="edit-python-button"
               >
                 Edit Code
               </Button>
             </div>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="polydraw-python-edit-mode">
             <textarea
               value={editingPythonString}
               onChange={(e) => setEditingPythonString(e.target.value)}
-              className="w-full h-32 bg-gray-800 text-green-400 p-3 rounded font-mono text-sm resize-none"
+              className="polydraw-python-editor w-full h-32 bg-gray-800 text-green-400 p-3 rounded font-mono text-sm resize-none"
               placeholder="Enter Python format (shape_1 = [(x, y), (x, y), ...])..."
+              data-testid="python-editor"
             />
-            <div className="flex gap-2 mt-2">
+            <div className="polydraw-python-edit-actions flex gap-2 mt-2">
               <Button
                 onClick={applyPythonChanges}
                 variant="primary"
                 size="sm"
+                className="polydraw-apply-python-button"
+                data-testid="apply-python-button"
               >
                 Apply Changes
               </Button>
@@ -198,31 +205,35 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
                 }}
                 variant="secondary"
                 size="sm"
+                className="polydraw-cancel-python-button"
+                data-testid="cancel-python-button"
               >
                 Cancel
               </Button>
             </div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="polydraw-python-format-hint text-xs text-gray-500 mt-1">
               Format: [(x, y), (x, y), ...] - Each line represents one shape as a list of tuples.
             </div>
-          </>
+          </div>
         )}
-      </div>
+      </section>
 
-      {/* SVG String Format */}
-      <div>
-        <h3 className="text-lg font-semibold mb-2 text-gray-800">SVG String Format</h3>
+      {/* SVG String Format Export Section */}
+      <section className="polydraw-svg-export-section">
+        <h3 className="polydraw-section-title text-lg font-semibold mb-2 text-gray-800">SVG String Format</h3>
         {!isEditingSVG ? (
-          <>
-            <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">
-              <pre>{generateSVGString()}</pre>
+          <div className="polydraw-svg-display-mode">
+            <div className="polydraw-code-display bg-gray-800 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto" data-testid="svg-code-display">
+              <pre className="polydraw-code-content">{generateSVGString()}</pre>
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="polydraw-svg-actions flex gap-2 mt-2">
               <Button
                 onClick={() => copyToClipboard(generateSVGString())}
                 variant="primary"
                 size="sm"
                 icon={copied ? <Check size={14} /> : <Copy size={14} />}
+                className="polydraw-copy-svg-button"
+                data-testid="copy-svg-button"
               >
                 {copied ? 'Copied!' : 'Copy'}
               </Button>
@@ -230,24 +241,29 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
                 onClick={startEditingSVG}
                 variant="secondary"
                 size="sm"
+                className="polydraw-edit-svg-button"
+                data-testid="edit-svg-button"
               >
                 Edit String
               </Button>
             </div>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="polydraw-svg-edit-mode">
             <textarea
               value={editingSVGString}
               onChange={(e) => setEditingSVGString(e.target.value)}
-              className="w-full h-32 bg-gray-800 text-green-400 p-3 rounded font-mono text-sm resize-none"
+              className="polydraw-svg-editor w-full h-32 bg-gray-800 text-green-400 p-3 rounded font-mono text-sm resize-none"
               placeholder="Enter SVG string format (x y x y x y)..."
+              data-testid="svg-editor"
             />
-            <div className="flex gap-2 mt-2">
+            <div className="polydraw-svg-edit-actions flex gap-2 mt-2">
               <Button
                 onClick={applySVGChanges}
                 variant="primary"
                 size="sm"
+                className="polydraw-apply-svg-button"
+                data-testid="apply-svg-button"
               >
                 Apply Changes
               </Button>
@@ -258,16 +274,18 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
                 }}
                 variant="secondary"
                 size="sm"
+                className="polydraw-cancel-svg-button"
+                data-testid="cancel-svg-button"
               >
                 Cancel
               </Button>
             </div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="polydraw-svg-format-hint text-xs text-gray-500 mt-1">
               Format: Each line represents one shape. Use space-separated x y coordinates.
             </div>
-          </>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };
