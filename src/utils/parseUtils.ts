@@ -1,7 +1,6 @@
 import { Point, Shape, PolygonShape, ShapeStyle } from '../types';
-import { createShapeId } from './shapeUtils';
 
-// Legacy Polygon interface from App.tsx for exact compatibility
+// Polygon interface for backward compatibility with older data formats
 interface LegacyPolygon {
   id: number;
   name: string;
@@ -21,7 +20,7 @@ interface ImageInfo {
 }
 
 /**
- * Converts a legacy polygon from App.tsx to the new Shape system
+ * Converts a legacy polygon format to the current Shape system
  */
 const convertLegacyPolygonToShape = (polygon: LegacyPolygon): PolygonShape => {
   const style: ShapeStyle = {
@@ -45,7 +44,7 @@ const convertLegacyPolygonToShape = (polygon: LegacyPolygon): PolygonShape => {
 };
 
 /**
- * Converts a new Shape to legacy polygon format for App.tsx compatibility
+ * Converts a Shape to legacy polygon format for backward compatibility
  */
 const convertShapeToLegacyPolygon = (shape: PolygonShape): LegacyPolygon => {
   return {
@@ -62,7 +61,7 @@ const convertShapeToLegacyPolygon = (shape: PolygonShape): LegacyPolygon => {
 };
 
 /**
- * Generates an SVG coordinate string from shapes (EXACT COPY from App.tsx logic)
+ * Generates an SVG coordinate string from shapes
  * @param shapes - Array of shapes to convert
  * @param normalize - Whether to normalize coordinates (0-1 range)  
  * @param imageInfo - Image dimensions for normalization
@@ -97,7 +96,7 @@ export const generateSVGString = (
 };
 
 /**
- * Generates an SVG coordinate string from legacy polygons (for App.tsx compatibility)
+ * Generates an SVG coordinate string from legacy polygons (for backward compatibility)
  * @param polygons - Array of legacy polygons to convert
  * @param normalize - Whether to normalize coordinates (0-1 range)
  * @param imageInfo - Image dimensions for normalization
@@ -132,7 +131,7 @@ export const generateSVGStringFromPolygons = (
 };
 
 /**
- * Parses a Python coordinate string into shapes (EXACT COPY of App.tsx logic, converted to Shape output)
+ * Parses a Python coordinate string into shapes
  * @param pythonString - String containing Python list format coordinates
  * @param normalize - Whether coordinates are normalized and need denormalization
  * @param imageInfo - Image dimensions for denormalization
@@ -143,7 +142,7 @@ export const parsePythonString = (
   normalize: boolean = false,
   imageInfo?: ImageInfo
 ): PolygonShape[] => {
-  // EXACT COPY of App.tsx parsePythonString logic
+  // Parse Python list format coordinates
   const lines = pythonString.split('\n').filter(line => {
     const trimmed = line.trim();
     return trimmed && !trimmed.startsWith('#');
@@ -197,7 +196,7 @@ export const parsePythonString = (
 };
 
 /**
- * Parses an SVG coordinate string into shapes (EXACT COPY of App.tsx logic, converted to Shape output)
+ * Parses an SVG coordinate string into shapes
  * @param svgString - String containing space-separated coordinates
  * @param normalize - Whether coordinates are normalized and need denormalization
  * @param imageInfo - Image dimensions for denormalization
@@ -208,7 +207,7 @@ export const parseSVGString = (
   normalize: boolean = false,
   imageInfo?: ImageInfo
 ): PolygonShape[] => {
-  // EXACT COPY of App.tsx parseSVGString logic
+  // Parse space-separated coordinate format
   const lines = svgString.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
   const newPolygons: LegacyPolygon[] = [];
   
@@ -246,10 +245,10 @@ export const parseSVGString = (
   return newPolygons.map(convertLegacyPolygonToShape);
 };
 
-// ==== LEGACY COMPATIBILITY FUNCTIONS FOR App.tsx ====
+// ==== LEGACY COMPATIBILITY FUNCTIONS ====
 
 /**
- * Parses a Python coordinate string into legacy polygons (for App.tsx compatibility)
+ * Parses a Python coordinate string into legacy polygons (for backward compatibility)
  * Uses the exact same logic as the main parsePythonString but returns legacy format
  */
 export const parsePythonStringToPolygons = (
@@ -263,7 +262,7 @@ export const parsePythonStringToPolygons = (
 };
 
 /**
- * Parses an SVG coordinate string into legacy polygons (for App.tsx compatibility)
+ * Parses an SVG coordinate string into legacy polygons (for backward compatibility)
  * Uses the exact same logic as the main parseSVGString but returns legacy format
  */
 export const parseSVGStringToPolygons = (
