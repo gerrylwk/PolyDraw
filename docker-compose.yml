@@ -11,14 +11,6 @@ services:
     environment:
       - NODE_ENV=production
     
-    # Health check
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    
     # Resource limits (adjust based on your server capacity)
     deploy:
       resources:

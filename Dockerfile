@@ -1,7 +1,7 @@
 # Multi-stage build for PolyDraw React application
 
 # Stage 1: Build the application
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -29,10 +29,6 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose port 80
 EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"] 

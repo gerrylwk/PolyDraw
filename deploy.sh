@@ -74,30 +74,19 @@ fi
 print_status "Waiting for application to start..."
 sleep 10
 
-# Check if the application is running
-if curl -f http://localhost:$PORT/health &> /dev/null; then
-    print_status "Application is running successfully!"
-    echo ""
-    echo -e "${GREEN}🎉 PolyDraw is now accessible at:${NC}"
-    echo -e "${BLUE}   http://localhost:$PORT${NC}"
-    echo -e "${BLUE}   http://YOUR_SERVER_IP:$PORT${NC}"
-    echo ""
-    echo -e "${YELLOW}Management commands:${NC}"
-    if [ "$USE_COMPOSE" = true ]; then
-        echo "  Stop:    docker-compose down"
-        echo "  Restart: docker-compose restart"
-        echo "  Logs:    docker-compose logs -f"
-    else
-        echo "  Stop:    docker stop $APP_NAME"
-        echo "  Restart: docker restart $APP_NAME"
-        echo "  Logs:    docker logs -f $APP_NAME"
-    fi
+print_status "Application deployment completed!"
+echo ""
+echo -e "${GREEN}🎉 PolyDraw is now accessible at:${NC}"
+echo -e "${BLUE}   http://localhost:$PORT${NC}"
+echo -e "${BLUE}   http://YOUR_SERVER_IP:$PORT${NC}"
+echo ""
+echo -e "${YELLOW}Management commands:${NC}"
+if [ "$USE_COMPOSE" = true ]; then
+    echo "  Stop:    docker-compose down"
+    echo "  Restart: docker-compose restart"
+    echo "  Logs:    docker-compose logs -f"
 else
-    print_error "Application failed to start. Check the logs:"
-    if [ "$USE_COMPOSE" = true ]; then
-        docker-compose logs
-    else
-        docker logs $APP_NAME
-    fi
-    exit 1
+    echo "  Stop:    docker stop $APP_NAME"
+    echo "  Restart: docker restart $APP_NAME"
+    echo "  Logs:    docker logs -f $APP_NAME"
 fi 

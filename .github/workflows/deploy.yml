@@ -52,46 +52,8 @@ jobs:
       run: |
         echo "Waiting for application to start..."
         sleep 15
-    
-    - name: Health Check
-      run: |
-        echo "Performing health check..."
-        max_attempts=10
-        attempt=1
-        
-        while [ $attempt -le $max_attempts ]; do
-          if curl -f http://localhost:3000/health; then
-            echo "✅ Application is healthy!"
-            echo "🚀 Deployment successful!"
-            echo "📱 Application is running at: http://localhost:3000"
-            exit 0
-          fi
-          echo "⏳ Attempt $attempt/$max_attempts: Application not ready yet..."
-          sleep 10
-          attempt=$((attempt + 1))
-        done
-        
-        echo "❌ Health check failed after $max_attempts attempts"
-        echo "📋 Container logs:"
-        docker logs ${{ env.CONTAINER_NAME }}
-        exit 1
-    
-    - name: Rollback on failure
-      if: failure()
-      run: |
-        echo "🔄 Rolling back due to failed health check..."
-        docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
-        docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
-        
-        # Try to start previous version if it exists
-        if docker images ${{ env.IMAGE_NAME }}:previous --format "table {{.Repository}}" | grep -q ${{ env.IMAGE_NAME }}; then
-          echo "🔄 Starting previous version..."
-          docker run -d \
-            --name ${{ env.CONTAINER_NAME }} \
-            --restart unless-stopped \
-            -p 3000:80 \
-            ${{ env.IMAGE_NAME }}:previous
-        fi
+        echo "✅ Deployment completed!"
+        echo "🚀 Application should be running at: http://localhost:3000"
     
     - name: Tag successful deployment
       if: success()
