@@ -343,7 +343,7 @@ function App() {
                   </div>
                 </div>
               </section>
-            </div>
+              </div>
           </aside>
 
           {/* Main Canvas Area */}
@@ -377,40 +377,40 @@ function App() {
                 <div className="polydraw-normalize-setting flex items-center gap-2">
                   <label className="polydraw-setting-label text-sm font-medium text-gray-700">Normalize Coordinates:</label>
                   <label className="polydraw-toggle-switch relative inline-flex items-center cursor-pointer" data-testid="normalize-toggle">
-                    <input
-                      type="checkbox"
+                  <input
+                    type="checkbox"
                       checked={canvasSettings.normalize}
                       onChange={(e) => handleCanvasSettingsChange({ normalize: e.target.checked })}
                       className="polydraw-toggle-input sr-only peer"
                       data-testid="normalize-checkbox"
                     />
                     <div className="polydraw-toggle-track w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
+                </label>
+              </div>
 
                 <div className="polydraw-snap-setting flex items-center gap-2">
                   <label className="polydraw-setting-label text-sm font-medium text-gray-700">Snap to Image Edges:</label>
                   <label className="polydraw-toggle-switch relative inline-flex items-center cursor-pointer" data-testid="snap-toggle">
-                    <input
-                      type="checkbox"
+                  <input
+                    type="checkbox"
                       checked={canvasSettings.snapToEdge}
                       onChange={(e) => handleCanvasSettingsChange({ snapToEdge: e.target.checked })}
                       className="polydraw-toggle-input sr-only peer"
                       data-testid="snap-checkbox"
                     />
                     <div className="polydraw-toggle-track w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
+                </label>
+              </div>
 
                 {canvasSettings.snapToEdge && (
                   <div className="polydraw-snap-distance-setting">
                     <label className="polydraw-setting-label block text-sm font-medium text-gray-700 mb-1">
                       Snap Distance: <span className="polydraw-snap-value">{canvasSettings.snapThreshold}px</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="5"
-                      max="50"
+                  </label>
+                  <input
+                    type="range"
+                    min="5"
+                    max="50"
                       value={canvasSettings.snapThreshold}
                       onChange={(e) => handleCanvasSettingsChange({ snapThreshold: parseInt(e.target.value) })}
                       className="polydraw-snap-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
@@ -419,9 +419,9 @@ function App() {
                     <div className="polydraw-slider-range flex justify-between text-xs text-gray-500 mt-1">
                       <span className="polydraw-range-min">5px</span>
                       <span className="polydraw-range-max">50px</span>
-                    </div>
                   </div>
-                )}
+                </div>
+              )}
               </div>
 
               {/* Export Widgets */}
@@ -506,7 +506,7 @@ function App() {
                                     onChange={(e) => shapes.updateShapeStyle(shape.id, {
                                       color: {
                                         ...shape.style.color,
-                                        r: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                      r: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
                                       }
                                     })}
                                     className="polydraw-color-input polydraw-color-input--red w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -523,7 +523,7 @@ function App() {
                                     onChange={(e) => shapes.updateShapeStyle(shape.id, {
                                       color: {
                                         ...shape.style.color,
-                                        g: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                      g: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
                                       }
                                     })}
                                     className="polydraw-color-input polydraw-color-input--green w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -540,7 +540,7 @@ function App() {
                                     onChange={(e) => shapes.updateShapeStyle(shape.id, {
                                       color: {
                                         ...shape.style.color,
-                                        b: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                      b: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
                                       }
                                     })}
                                     className="polydraw-color-input polydraw-color-input--blue w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"

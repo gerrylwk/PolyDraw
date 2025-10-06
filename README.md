@@ -112,22 +112,55 @@ docker-compose down
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
+- **Testing**: Vitest + React Testing Library
 - **Development**: ESLint for code quality
 
 ### Project Structure
 ```
 PolyDraw/
-├── src/
+├── src/                 # Source code
+│   ├── components/      # React components
+│   │   ├── Canvas/      # Canvas component
+│   │   ├── UI/          # UI components (Button, Input)
+│   │   └── Widgets/     # Feature widgets
+│   ├── hooks/           # Custom React hooks
+│   ├── types/           # TypeScript type definitions
+│   ├── utils/           # Utility functions
 │   ├── App.tsx          # Main application component
 │   ├── main.tsx         # Application entry point
-│   ├── index.css        # Global styles
-│   └── vite-env.d.ts    # Vite type definitions
+│   └── index.css        # Global styles
+├── tests/               # Test files (mirrors src structure)
+│   ├── components/      # Component tests
+│   ├── utils/           # Utility tests
+│   ├── hooks/           # Hook tests
+│   └── setup/           # Test configuration
 ├── public/              # Static assets
 ├── package.json         # Dependencies and scripts
 ├── vite.config.ts       # Vite configuration
+├── vitest.config.ts     # Vitest test configuration
 ├── tailwind.config.js   # Tailwind CSS configuration
 └── tsconfig.json        # TypeScript configuration
 ```
+
+### Testing
+
+The project includes comprehensive unit tests:
+
+```bash
+# Run tests in watch mode
+npm test
+
+# Run tests once
+npm run test:run
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests with UI
+npm run test:ui
+```
+
+See [TESTING.md](TESTING.md) for detailed testing documentation and [TEST_ORGANIZATION.md](TEST_ORGANIZATION.md) for information about the test structure.
 
 
 
