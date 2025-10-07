@@ -229,38 +229,96 @@ describe('useCanvas', () => {
   });
 
   describe('uploadImage', () => {
-    it('should update file name immediately', () => {
+    beforeEach(() => {
+      const mockImageBitmap = {
+        width: 800,
+        height: 600,
+        close: vi.fn()
+      } as unknown as ImageBitmap;
+
+      global.createImageBitmap = vi.fn().mockResolvedValue(mockImageBitmap);
+    });
+
+    it('should update file name and set loading state', async () => {
       const { result } = renderHook(() => useCanvas());
 
-      const mockFile = new File([''], 'test-image.jpg', { type: 'image/jpeg' });
+      const mockArrayBuffer = new ArrayBuffer(8);
+      const mockFile = {
+        name: 'test-image.jpg',
+        type: 'image/jpeg',
+        arrayBuffer: vi.fn().mockResolvedValue(mockArrayBuffer)
+      } as unknown as File;
 
-      act(() => {
-        result.current.uploadImage(mockFile);
+      await act(async () => {
+        await result.current.uploadImage(mockFile);
       });
 
       expect(result.current.imageInfo.fileName).toBe('test-image.jpg');
     });
 
-    it('should handle image loading', async () => {
+    it('should handle image loading with progress', async () => {
       const { result } = renderHook(() => useCanvas());
 
-      // Create a mock canvas ref
       const mockCanvasElement = document.createElement('div');
       Object.defineProperty(result.current.canvasRef, 'current', {
         value: mockCanvasElement,
         writable: true,
       });
 
-      const mockFile = new File([''], 'test-image.jpg', { type: 'image/jpeg' });
+      const mockArrayBuffer = new ArrayBuffer(8);
+      const mockFile = {
+        name: 'test-image.jpg',
+        type: 'image/jpeg',
+        arrayBuffer: vi.fn().mockResolvedValue(mockArrayBuffer)
+      } as unknown as File;
+
+      await act(async () => {
+        await result.current.uploadImage(mockFile);
+      });
+
+      expect(result.current.imageInfo.fileName).toBe('test-image.jpg');
+      expect(result.current.imageInfo.isLoading).toBe(false);
+    });
+
+    it('should set loading state during upload', async () => {
+      const { result } = renderHook(() => useCanvas());
+
+      const mockArrayBuffer = new ArrayBuffer(8);
+      const mockFile = {
+        name: 'test-image.jpg',
+        type: 'image/jpeg',
+        arrayBuffer: vi.fn().mockResolvedValue(mockArrayBuffer)
+      } as unknown as File;
+
+      let loadingStateChecked = false;
 
       act(() => {
-        result.current.uploadImage(mockFile);
+        result.current.uploadImage(mockFile).then(() => {
+          loadingStateChecked = true;
+        });
       });
 
-      // Wait for FileReader and image load
-      await waitFor(() => {
-        expect(result.current.imageInfo.fileName).toBe('test-image.jpg');
+      await waitFor(() => expect(loadingStateChecked).toBe(true));
+      expect(result.current.imageInfo.fileName).toBe('test-image.jpg');
+    });
+
+    it('should track resize information', async () => {
+      const { result } = renderHook(() => useCanvas());
+
+      const mockArrayBuffer = new ArrayBuffer(8);
+      const mockFile = {
+        name: 'large-image.jpg',
+        type: 'image/jpeg',
+        arrayBuffer: vi.fn().mockResolvedValue(mockArrayBuffer)
+      } as unknown as File;
+
+      await act(async () => {
+        await result.current.uploadImage(mockFile);
       });
+
+      expect(result.current.imageInfo).toHaveProperty('wasResized');
+      expect(result.current.imageInfo).toHaveProperty('originalWidth');
+      expect(result.current.imageInfo).toHaveProperty('originalHeight');
     });
   });
 

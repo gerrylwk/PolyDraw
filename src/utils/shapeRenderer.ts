@@ -73,7 +73,7 @@ export class CircleRenderer implements ShapeRenderer {
 }
 
 export class ShapeRendererFactory {
-  private static renderers: Map<string, ShapeRenderer> = new Map([
+  private static renderers = new Map<string, ShapeRenderer>([
     ['polygon', new PolygonRenderer()],
     ['circle', new CircleRenderer()]
   ]);

@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { Canvas } from './components/Canvas';
-import { 
-  ViewControlsWidget, 
+import { LoadingIndicator, ImageResizeNotification } from './components/UI';
+import {
+  ViewControlsWidget,
   ExportWidget
 } from './components/Widgets';
 import { 
@@ -33,6 +34,7 @@ function App() {
   });
   
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
+  const [showResizeNotification, setShowResizeNotification] = useState(false);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -209,7 +211,13 @@ function App() {
                     accept="image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) canvas.uploadImage(file);
+                      if (file) {
+                        canvas.uploadImage(file).then(() => {
+                          if (canvas.imageInfo.wasResized) {
+                            setShowResizeNotification(true);
+                          }
+                        });
+                      }
                     }}
                     className="polydraw-file-input hidden"
                     data-testid="file-input"
@@ -219,7 +227,8 @@ function App() {
                       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
                       input?.click();
                     }}
-                    className="polydraw-file-upload-button flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors"
+                    disabled={canvas.imageInfo.isLoading}
+                    className="polydraw-file-upload-button flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     data-testid="file-upload-button"
                   >
                     <svg className="polydraw-upload-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -230,9 +239,18 @@ function App() {
                     <span className="polydraw-button-text">Choose File</span>
                   </button>
                 </div>
-                <div className="polydraw-file-name text-xs text-gray-500 mt-1 truncate" data-testid="file-name">
-                  {canvas.imageInfo.fileName}
-              </div>
+                {canvas.imageInfo.isLoading ? (
+                  <div className="mt-3">
+                    <LoadingIndicator
+                      progress={canvas.imageInfo.loadProgress || 0}
+                      message="Processing image..."
+                    />
+                  </div>
+                ) : (
+                  <div className="polydraw-file-name text-xs text-gray-500 mt-1 truncate" data-testid="file-name">
+                    {canvas.imageInfo.fileName}
+                  </div>
+                )}
               </section>
 
               {/* View Type Section */}
@@ -332,6 +350,17 @@ function App() {
 
           {/* Main Canvas Area */}
           <main className="polydraw-main-content flex-1" data-testid="polydraw-main-content">
+            {showResizeNotification && canvas.imageInfo.wasResized && (
+              <div className="mb-4">
+                <ImageResizeNotification
+                  originalWidth={canvas.imageInfo.originalWidth || 0}
+                  originalHeight={canvas.imageInfo.originalHeight || 0}
+                  newWidth={canvas.imageInfo.naturalWidth}
+                  newHeight={canvas.imageInfo.naturalHeight}
+                  onDismiss={() => setShowResizeNotification(false)}
+                />
+              </div>
+            )}
             <Canvas
               canvasState={canvas.canvasState}
               imageInfo={canvas.imageInfo}
