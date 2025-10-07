@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { CanvasState, ImageInfo } from '../types';
 import { updateCanvasTransform, resetCanvasView, calculateZoomedPosition } from '../utils';
+import { loadImageOptimized, createImageFromBitmap } from '../utils/imageLoader';
 
 export interface UseCanvasReturn {
   canvasState: CanvasState;
@@ -61,39 +62,60 @@ export const useCanvas = (): UseCanvasReturn => {
     setCanvasState(prev => ({ ...prev, isMouseOverCanvas }));
   }, []);
 
-  const uploadImage = useCallback((file: File) => {
-    setImageInfo(prev => ({ ...prev, fileName: file.name }));
+  const uploadImage = useCallback(async (file: File) => {
+    setImageInfo(prev => ({
+      ...prev,
+      fileName: file.name,
+      isLoading: true,
+      loadProgress: 0
+    }));
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      // Remove previous image
+    try {
+      const result = await loadImageOptimized(file, {
+        maxWidth: 4096,
+        maxHeight: 4096,
+        onProgress: (progress) => {
+          setImageInfo(prev => ({ ...prev, loadProgress: progress }));
+        }
+      });
+
       if (imageInfo.element && canvasRef.current) {
         canvasRef.current.removeChild(imageInfo.element);
       }
 
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.className = 'max-w-none';
-      
-      img.onload = () => {
-        const newImageInfo: ImageInfo = {
-          element: img,
-          fileName: file.name,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight
-        };
-        setImageInfo(newImageInfo);
-        
-        // Reset view to fit new image
-        const { scale, offsetX, offsetY } = resetCanvasView(newImageInfo, canvasContainerRef);
-        setCanvasState(prev => ({ ...prev, scale, offsetX, offsetY }));
+      const img = createImageFromBitmap(result.imageBitmap);
+
+      const newImageInfo: ImageInfo = {
+        element: img,
+        fileName: file.name,
+        naturalWidth: result.width,
+        naturalHeight: result.height,
+        originalWidth: result.originalWidth,
+        originalHeight: result.originalHeight,
+        wasResized: result.wasResized,
+        isLoading: false,
+        loadProgress: 100
       };
+
+      setImageInfo(newImageInfo);
 
       if (canvasRef.current) {
         canvasRef.current.appendChild(img);
       }
-    };
-    reader.readAsDataURL(file);
+
+      const { scale, offsetX, offsetY } = resetCanvasView(newImageInfo, canvasContainerRef);
+      setCanvasState(prev => ({ ...prev, scale, offsetX, offsetY }));
+
+      result.imageBitmap.close();
+
+    } catch (error) {
+      console.error('Failed to load image:', error);
+      setImageInfo(prev => ({
+        ...prev,
+        isLoading: false,
+        loadProgress: 0
+      }));
+    }
   }, [imageInfo.element]);
 
   const resetView = useCallback(() => {

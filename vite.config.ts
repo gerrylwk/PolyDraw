@@ -7,6 +7,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  worker: {
+    format: 'es',
+  },
   // Configuration for remote server deployment
   server: {
     host: '0.0.0.0', // Allow external connections

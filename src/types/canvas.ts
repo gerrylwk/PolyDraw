@@ -22,4 +22,9 @@ export interface ImageInfo {
   fileName: string;
   naturalWidth: number;
   naturalHeight: number;
+  originalWidth?: number;
+  originalHeight?: number;
+  wasResized?: boolean;
+  isLoading?: boolean;
+  loadProgress?: number;
 }
