@@ -1,4 +1,4 @@
-import { Shape, PolygonShape, CircleShape, Point } from '../types';
+import { Shape, PolygonShape, CircleShape } from '../types';
 
 export interface ShapeRenderer {
   createSVGElement(shape: Shape): SVGElement;
@@ -7,7 +7,7 @@ export interface ShapeRenderer {
 }
 
 export class PolygonRenderer implements ShapeRenderer {
-  createSVGElement(shape: PolygonShape): SVGPolygonElement {
+  createSVGElement(): SVGPolygonElement {
     const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
     return polygonElement;
   }
@@ -30,7 +30,7 @@ export class PolygonRenderer implements ShapeRenderer {
     shape.element.setAttribute('fill-opacity', shape.style.opacity.toString());
     shape.element.setAttribute('stroke-width', (shape.style.strokeWidth || 2).toString());
     shape.element.setAttribute('class', 'stroke-2');
-    (shape.element as any).style.vectorEffect = 'non-scaling-stroke';
+    (shape.element as SVGPolygonElement).style.vectorEffect = 'non-scaling-stroke';
 
     // Update name element color to match shape
     if (shape.nameElement) {
@@ -40,7 +40,7 @@ export class PolygonRenderer implements ShapeRenderer {
 }
 
 export class CircleRenderer implements ShapeRenderer {
-  createSVGElement(shape: CircleShape): SVGCircleElement {
+  createSVGElement(): SVGCircleElement {
     const circleElement = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     return circleElement;
   }
@@ -63,7 +63,7 @@ export class CircleRenderer implements ShapeRenderer {
     shape.element.setAttribute('stroke', colorString);
     shape.element.setAttribute('fill-opacity', shape.style.opacity.toString());
     shape.element.setAttribute('stroke-width', (shape.style.strokeWidth || 2).toString());
-    (shape.element as any).style.vectorEffect = 'non-scaling-stroke';
+    (shape.element as SVGCircleElement).style.vectorEffect = 'non-scaling-stroke';
 
     // Update name element color to match shape
     if (shape.nameElement) {

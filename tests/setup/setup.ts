@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Cleanup after each test
@@ -33,6 +33,7 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
   transform: vi.fn(),
   rect: vi.fn(),
   clip: vi.fn(),
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 })) as any;
 
 // Mock SVG methods
@@ -42,6 +43,7 @@ if (typeof SVGElement !== 'undefined') {
     y: 0,
     width: 100,
     height: 100,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   })) as any;
 }
 

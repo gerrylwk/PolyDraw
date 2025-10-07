@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   parsePythonString,
-  parseSVGString,
   generateSVGString,
 } from '../../src/utils/parseUtils';
 import { PolygonShape, ImageInfo } from '../../src/types';

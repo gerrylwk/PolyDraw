@@ -16,7 +16,7 @@ import {
   straightenLine,
   createShapeSVG
 } from './utils';
-import { CanvasSettings, Point } from './types';
+import { CanvasSettings, Point, Shape, PolygonShape } from './types';
 
 function App() {
   // Custom hooks for state management
@@ -89,20 +89,10 @@ function App() {
       canvas.setDragging(true, e.clientX - canvas.canvasState.offsetX, e.clientY - canvas.canvasState.offsetY);
     }
   }, [
-    canvas.canvasContainerRef,
-    canvas.canvasState,
-    canvas.imageInfo,
-    canvas.canvasRef,
+    canvas,
     canvasSettings,
-    tools.toolState,
-    shapes.currentShape,
-    shapes.shapes,
-    shapes.completeCurrentShape,
-    shapes.startNewPolygon,
-    shapes.addPointToShape,
-    tools.setDraggingPoint,
-    tools.setSelectedPoint,
-    canvas.setDragging
+    tools,
+    shapes
   ]);
 
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
@@ -126,7 +116,7 @@ function App() {
 
       shapes.updateShapePoints(tools.draggedPoint.shape.id, updatedPoints);
       tools.setDraggingPoint(true, { ...tools.draggedPoint, ...position });
-      
+
       e.preventDefault();
     } else if (canvas.canvasState.isDragging) {
       canvas.setOffset(
@@ -137,16 +127,16 @@ function App() {
     } else if (tools.toolState.currentTool === 'polygon' && shapes.currentShape) {
       // Update preview line for polygon
       if (shapes.currentShape.type === 'polygon' && 'previewLine' in shapes.currentShape) {
-        const polygonShape = shapes.currentShape as any;
+        const polygonShape = shapes.currentShape as PolygonShape & { previewLine?: SVGLineElement };
         if (polygonShape.previewLine) {
           const lastPoint = shapes.currentShape.points[shapes.currentShape.points.length - 1];
           let previewPosition = position;
-      
+
       // Apply line straightening to preview line if Shift is pressed
           if (tools.toolState.isShiftPressed) {
             previewPosition = straightenLine(lastPoint, position);
           }
-          
+
           polygonShape.previewLine.setAttribute('x1', lastPoint.x.toString());
           polygonShape.previewLine.setAttribute('y1', lastPoint.y.toString());
           polygonShape.previewLine.setAttribute('x2', previewPosition.x.toString());
@@ -155,16 +145,10 @@ function App() {
       }
     }
   }, [
-    canvas.canvasContainerRef,
-    canvas.canvasState,
-    canvas.imageInfo,
-    canvas.setOffset,
+    canvas,
     canvasSettings,
-    tools.toolState,
-    tools.draggedPoint,
-    tools.setDraggingPoint,
-    shapes.currentShape,
-    shapes.updateShapePoints
+    tools,
+    shapes
   ]);
 
   const handleCanvasMouseUp = useCallback(() => {
@@ -174,10 +158,10 @@ function App() {
     if (canvas.canvasState.isDragging) {
       canvas.setDragging(false);
     }
-  }, [tools.toolState.isDraggingPoint, canvas.canvasState.isDragging, tools.setDraggingPoint, canvas.setDragging]);
+  }, [canvas, tools]);
 
   // Widget event handlers
-  const handleShapeUpdate = useCallback((shapeId: string, updates: any) => {
+  const handleShapeUpdate = useCallback((shapeId: string, updates: Partial<Shape>) => {
     shapes.updateShape(shapeId, updates);
   }, [shapes.updateShape]);
 
@@ -187,7 +171,7 @@ function App() {
       const updatedPoints = shape.points.map((p, i) => i === pointIndex ? newPoint : p);
       shapes.updateShapePoints(shapeId, updatedPoints);
     }
-  }, [shapes.shapes, shapes.updateShapePoints]);
+  }, [shapes]);
 
   const handleCanvasSettingsChange = useCallback((newSettings: Partial<CanvasSettings>) => {
     setCanvasSettings(prev => ({ ...prev, ...newSettings }));
@@ -199,7 +183,7 @@ function App() {
     shapes.shapes.forEach(shape => {
       shapes.updateShapeStyle(shape.id, { opacity });
     });
-  }, [shapes.shapes, shapes.updateShapeStyle]);
+  }, [shapes]);
 
   return (
     <div className="polydraw-app min-h-screen bg-gray-100" data-testid="polydraw-app">
@@ -256,7 +240,7 @@ function App() {
                 <h3 className="polydraw-section-title block text-sm font-medium text-gray-700 mb-2">View Type</h3>
                 <select
                   value={canvasSettings.viewType}
-                  onChange={(e) => handleCanvasSettingsChange({ viewType: e.target.value as any })}
+                  onChange={(e) => handleCanvasSettingsChange({ viewType: e.target.value as 'static' | 'double-panoramic' })}
                   className="polydraw-view-type-select w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
                   data-testid="view-type-select"
                 >

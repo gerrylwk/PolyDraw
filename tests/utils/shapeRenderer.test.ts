@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   PolygonRenderer,
   CircleRenderer,
@@ -128,6 +128,7 @@ describe('shapeRenderer', () => {
 
         renderer.applyStyle(polygonShape);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect((element as any).style.vectorEffect).toBe('non-scaling-stroke');
       });
 
@@ -261,6 +262,7 @@ describe('shapeRenderer', () => {
 
         renderer.applyStyle(circleShape);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect((element as any).style.vectorEffect).toBe('non-scaling-stroke');
       });
 
