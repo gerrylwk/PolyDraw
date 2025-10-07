@@ -55,17 +55,35 @@ export const findPointAt = (
   const threshold = 15 / scale;
 
   for (const shape of shapes) {
-    for (let i = 0; i < shape.points.length; i++) {
-      const point = shape.points[i];
-      const distance = Math.sqrt(Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2));
+    if (shape.type === 'circle') {
+      const circleShape = shape as CircleShape;
+      const radiusPoint = {
+        x: circleShape.center.x + circleShape.radius,
+        y: circleShape.center.y
+      };
+      const distance = Math.sqrt(Math.pow(radiusPoint.x - x, 2) + Math.pow(radiusPoint.y - y, 2));
 
       if (distance <= threshold) {
         return {
-          x: point.x,
-          y: point.y,
-          index: i,
+          x: radiusPoint.x,
+          y: radiusPoint.y,
+          index: 0,
           shape: shape
         };
+      }
+    } else {
+      for (let i = 0; i < shape.points.length; i++) {
+        const point = shape.points[i];
+        const distance = Math.sqrt(Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2));
+
+        if (distance <= threshold) {
+          return {
+            x: point.x,
+            y: point.y,
+            index: i,
+            shape: shape
+          };
+        }
       }
     }
   }

@@ -64,17 +64,21 @@ function App() {
         const firstPoint = shapes.currentShape.points[0];
         const distance = Math.sqrt(Math.pow(firstPoint.x - position.x, 2) + Math.pow(firstPoint.y - position.y, 2));
         const threshold = 15 / canvas.canvasState.scale;
-        
+
         if (distance <= threshold) {
           shapes.completeCurrentShape();
           return;
         }
       }
-      
+
       if (!shapes.currentShape) {
         shapes.startNewPolygon(position, canvas.canvasRef);
       } else {
         shapes.addPointToShape(position, tools.toolState.isShiftPressed);
+      }
+    } else if (tools.toolState.currentTool === 'circle') {
+      if (!shapes.currentShape) {
+        shapes.startNewCircle(position, canvas.canvasRef);
       }
     } else if (tools.toolState.currentTool === 'select') {
       const point = findPointAt(position.x, position.y, shapes.shapes, canvas.canvasState.scale);
@@ -99,6 +103,7 @@ function App() {
     shapes.shapes,
     shapes.completeCurrentShape,
     shapes.startNewPolygon,
+    shapes.startNewCircle,
     shapes.addPointToShape,
     tools.setDraggingPoint,
     tools.setSelectedPoint,
@@ -120,13 +125,19 @@ function App() {
 
     if (tools.toolState.isDraggingPoint && tools.draggedPoint) {
       // Update the dragged point
-      const updatedPoints = tools.draggedPoint.shape.points.map((point, index) =>
-        index === tools.draggedPoint!.index ? position : point
-      );
-
-      shapes.updateShapePoints(tools.draggedPoint.shape.id, updatedPoints);
+      if (tools.draggedPoint.shape.type === 'circle') {
+        const circleShape = tools.draggedPoint.shape as any;
+        const center = circleShape.center;
+        const radius = Math.sqrt(Math.pow(position.x - center.x, 2) + Math.pow(position.y - center.y, 2));
+        shapes.updateShape(circleShape.id, { radius });
+      } else {
+        const updatedPoints = tools.draggedPoint.shape.points.map((point, index) =>
+          index === tools.draggedPoint!.index ? position : point
+        );
+        shapes.updateShapePoints(tools.draggedPoint.shape.id, updatedPoints);
+      }
       tools.setDraggingPoint(true, { ...tools.draggedPoint, ...position });
-      
+
       e.preventDefault();
     } else if (canvas.canvasState.isDragging) {
       canvas.setOffset(
@@ -134,6 +145,8 @@ function App() {
         e.clientY - canvas.canvasState.dragStartY
       );
       e.preventDefault();
+    } else if (tools.toolState.currentTool === 'circle' && shapes.currentShape && shapes.currentShape.type === 'circle') {
+      shapes.updateCircleRadius(position);
     } else if (tools.toolState.currentTool === 'polygon' && shapes.currentShape) {
       // Update preview line for polygon
       if (shapes.currentShape.type === 'polygon' && 'previewLine' in shapes.currentShape) {
@@ -164,7 +177,9 @@ function App() {
     tools.draggedPoint,
     tools.setDraggingPoint,
     shapes.currentShape,
-    shapes.updateShapePoints
+    shapes.updateShape,
+    shapes.updateShapePoints,
+    shapes.updateCircleRadius
   ]);
 
   const handleCanvasMouseUp = useCallback(() => {
@@ -174,7 +189,10 @@ function App() {
     if (canvas.canvasState.isDragging) {
       canvas.setDragging(false);
     }
-  }, [tools.toolState.isDraggingPoint, canvas.canvasState.isDragging, tools.setDraggingPoint, canvas.setDragging]);
+    if (tools.toolState.currentTool === 'circle' && shapes.currentShape && shapes.currentShape.type === 'circle') {
+      shapes.completeCurrentShape();
+    }
+  }, [tools.toolState.isDraggingPoint, tools.toolState.currentTool, canvas.canvasState.isDragging, tools.setDraggingPoint, canvas.setDragging, shapes.currentShape, shapes.completeCurrentShape]);
 
   // Widget event handlers
   const handleShapeUpdate = useCallback((shapeId: string, updates: any) => {
@@ -305,6 +323,21 @@ function App() {
                       <polyline points="12,5 12,19"/>
                     </svg>
                     <span className="polydraw-tool-label">Polygon</span>
+                  </button>
+                  <button
+                    onClick={() => tools.setCurrentTool('circle')}
+                    className={`polydraw-tool-button polydraw-tool-button--circle flex items-center justify-center gap-2 py-2 px-4 rounded transition-colors ${
+                      tools.toolState.currentTool === 'circle'
+                        ? 'polydraw-tool-button--active bg-blue-500 text-white'
+                        : 'polydraw-tool-button--inactive bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                    data-testid="tool-button-circle"
+                    data-tool="circle"
+                  >
+                    <svg className="polydraw-tool-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    <span className="polydraw-tool-label">Circle</span>
                   </button>
                 </div>
               </section>

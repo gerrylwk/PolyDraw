@@ -133,12 +133,22 @@ export const updateShapeDisplay = (shape: Shape): void => {
   renderer.applyStyle(shape);
 
   // Update point elements positions
-  shape.points.forEach((point, index) => {
-    if (shape.pointElements[index]) {
-      shape.pointElements[index].style.left = `${point.x}px`;
-      shape.pointElements[index].style.top = `${point.y}px`;
+  if (shape.type === 'circle') {
+    const circleShape = shape as CircleShape;
+    if (shape.pointElements[0]) {
+      const radiusPointX = circleShape.center.x + circleShape.radius;
+      const radiusPointY = circleShape.center.y;
+      shape.pointElements[0].style.left = `${radiusPointX}px`;
+      shape.pointElements[0].style.top = `${radiusPointY}px`;
     }
-  });
+  } else {
+    shape.points.forEach((point, index) => {
+      if (shape.pointElements[index]) {
+        shape.pointElements[index].style.left = `${point.x}px`;
+        shape.pointElements[index].style.top = `${point.y}px`;
+      }
+    });
+  }
 
   // Update name position
   if (shape.nameElement && shape.points.length > 0) {

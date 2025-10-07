@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Shape, PolygonShape, Point, DraggedPoint, ShapeStyle } from '../types';
-import { createPolygonShape } from '../utils/shapeUtils';
+import { Shape, PolygonShape, CircleShape, Point, DraggedPoint, ShapeStyle } from '../types';
+import { createPolygonShape, createCircleShape } from '../utils/shapeUtils';
 import { createShapeSVG, updateShapeDisplay } from '../utils/shapeRenderer';
 import { straightenLine } from '../utils/coordinateUtils';
 
@@ -19,6 +19,8 @@ export interface UseShapesReturn {
   
   // Shape operations
   startNewPolygon: (point: Point, canvasRef: React.RefObject<HTMLDivElement>) => PolygonShape;
+  startNewCircle: (point: Point, canvasRef: React.RefObject<HTMLDivElement>) => CircleShape;
+  updateCircleRadius: (point: Point) => void;
   addPointToShape: (point: Point, isShiftPressed: boolean) => void;
   completeCurrentShape: () => void;
   updateShapePoints: (shapeId: string, newPoints: Point[]) => void;
@@ -125,6 +127,47 @@ export const useShapes = (): UseShapesReturn => {
     
     return newPolygon;
   }, [shapes.length, addShape, createPointElement]);
+
+  const startNewCircle = useCallback((
+    point: Point,
+    canvasRef: React.RefObject<HTMLDivElement>
+  ): CircleShape => {
+    const newCircle = createCircleShape(point, 1, `Circle ${shapes.length + 1}`);
+
+    const svg = createShapeSVG(newCircle);
+
+    if (canvasRef.current) {
+      canvasRef.current.appendChild(svg);
+    }
+
+    const radiusPointX = point.x + 1;
+    const radiusPointY = point.y;
+    const pointElement = createPointElement(radiusPointX, radiusPointY, newCircle, 0, canvasRef);
+    newCircle.pointElements.push(pointElement);
+
+    addShape(newCircle);
+    setCurrentShape(newCircle);
+
+    return newCircle;
+  }, [shapes.length, addShape, createPointElement]);
+
+  const updateCircleRadius = useCallback((point: Point) => {
+    if (!currentShape || currentShape.type !== 'circle') return;
+
+    const circleShape = currentShape as CircleShape;
+    const center = circleShape.center;
+    const radius = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
+
+    const updatedShape = {
+      ...circleShape,
+      radius,
+      points: [center]
+    };
+
+    setShapes(prev => prev.map(s => s.id === updatedShape.id ? updatedShape : s));
+    setCurrentShape(updatedShape);
+    updateShapeDisplay(updatedShape);
+  }, [currentShape]);
 
   const addPointToShape = useCallback((point: Point, isShiftPressed: boolean) => {
     if (!currentShape) return;
@@ -236,6 +279,8 @@ export const useShapes = (): UseShapesReturn => {
     setSelectedShape,
     clearAllShapes,
     startNewPolygon,
+    startNewCircle,
+    updateCircleRadius,
     addPointToShape,
     completeCurrentShape,
     updateShapePoints,

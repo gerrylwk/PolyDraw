@@ -56,7 +56,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           ref={canvasRef}
           className={`absolute transform-gpu origin-top-left ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
           style={{
-            cursor: currentTool === 'polygon' ? 'crosshair' : isDragging ? 'grabbing' : 'grab'
+            cursor: (currentTool === 'polygon' || currentTool === 'circle') ? 'crosshair' : isDragging ? 'grabbing' : 'grab'
           }}
           data-canvas
         >
