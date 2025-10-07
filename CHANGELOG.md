@@ -7,7 +7,51 @@ PolyDraw is a React-based SVG polygon editor built with TypeScript and Vite. It 
 
 ## Version History & Feature Development
 
-### 🎨 **Latest Update: Centralized Polygon Styling System** *(Recent Fix)*
+### ⭕ **Latest Update: Circle Drawing Tool** *(New Feature)*
+
+#### **New Feature: Intuitive Circle Creation**
+- **Click-and-Drag Interface**: Click to set center point, drag to define radius
+- **Real-time Preview**: Circle updates dynamically as you drag the mouse
+- **Visual Feedback**: Crosshair cursor indicates drawing mode
+- **Control Point**: Draggable point at the edge allows for easy resizing
+
+#### **Implementation Details**
+```typescript
+// Circle shape structure
+interface CircleShape {
+  type: 'circle';
+  center: Point;
+  radius: number;
+  points: Point[];  // Stores center for consistency
+  style: ShapeStyle;
+}
+
+// Circle creation workflow
+1. User clicks canvas → Center point established
+2. User moves mouse → Radius calculated in real-time
+3. User releases → Circle completed and editable
+```
+
+#### **Key Features**
+- ✅ **Intuitive Drawing**: Natural click-and-drag interaction pattern
+- ✅ **Easy Resizing**: Drag the control point to adjust radius after creation
+- ✅ **Consistent Styling**: Uses same color and opacity system as polygons
+- ✅ **Seamless Integration**: Works with existing selection and editing tools
+- ✅ **Export Support**: Circle data exported alongside polygon coordinates
+
+#### **Technical Implementation**
+- **Shape Rendering**: Dedicated `CircleRenderer` class for SVG circle elements
+- **Radius Calculation**: Real-time distance calculation from center to cursor
+- **Control Point System**: Single draggable point positioned at circle edge
+- **Update System**: Modified `updateShapeDisplay` to handle circle-specific point positioning
+
+#### **User Interface**
+- **Circle Tool Button**: New button in drawing tools section with circle icon
+- **Tool Activation**: Click circle button to enable drawing mode
+- **Visual Indicator**: Crosshair cursor when circle tool is active
+- **Smooth Workflow**: Automatic completion on mouse release
+
+### 🎨 **Centralized Polygon Styling System** *(Previous Update)*
 
 #### **Problem Resolved: Color Update Issue**
 - **Issue**: CSS classes (`fill-blue-500`) were overriding inline color styles, preventing color changes from appearing on canvas
