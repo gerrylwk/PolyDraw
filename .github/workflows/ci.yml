@@ -17,7 +17,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
         cache: 'npm'
     
     - name: Install dependencies
@@ -40,10 +40,10 @@ jobs:
         # Wait for container to start
         sleep 10
         
-        # Test health endpoint
+        # Test basic connectivity
         for i in {1..5}; do
-          if curl -f http://localhost:3001/health; then
-            echo "✅ Health check passed!"
+          if curl -f http://localhost:3001/; then
+            echo "✅ Container is responding!"
             break
           fi
           echo "⏳ Attempt $i: Waiting for container..."
