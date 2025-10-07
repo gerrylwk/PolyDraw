@@ -51,14 +51,15 @@ describe('ImageResizeNotification', () => {
   it('should render with amber color scheme', () => {
     const { container } = render(<ImageResizeNotification {...defaultProps} />);
 
-    expect(container.querySelector('.bg-amber-50')).toBeInTheDocument();
-    expect(container.querySelector('.border-amber-200')).toBeInTheDocument();
+    expect(container.querySelector('.polydraw-resize-notification')).toBeInTheDocument();
+    expect(container.querySelector('.polydraw-resize-notification')).toHaveClass('bg-amber-50');
+    expect(container.querySelector('.polydraw-resize-notification')).toHaveClass('border-amber-200');
   });
 
   it('should display AlertCircle icon', () => {
     const { container } = render(<ImageResizeNotification {...defaultProps} />);
 
-    const icon = container.querySelector('.text-amber-600');
+    const icon = container.querySelector('.polydraw-resize-notification__icon');
     expect(icon).toBeInTheDocument();
   });
 
@@ -120,7 +121,7 @@ describe('ImageResizeNotification', () => {
   it('should have monospace font for dimensions', () => {
     const { container } = render(<ImageResizeNotification {...defaultProps} />);
 
-    const monoContainer = container.querySelector('.font-mono');
+    const monoContainer = container.querySelector('.polydraw-resize-notification__dimensions');
     expect(monoContainer).toBeInTheDocument();
   });
 

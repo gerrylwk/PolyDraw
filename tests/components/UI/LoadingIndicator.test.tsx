@@ -25,7 +25,7 @@ describe('LoadingIndicator', () => {
   it('should update progress bar width', () => {
     const { container } = render(<LoadingIndicator progress={75} />);
 
-    const progressBar = container.querySelector('.bg-blue-500');
+    const progressBar = container.querySelector('.polydraw-loading-indicator__bar');
     expect(progressBar).toBeInTheDocument();
     expect(progressBar).toHaveStyle({ width: '75%' });
   });
@@ -33,7 +33,7 @@ describe('LoadingIndicator', () => {
   it('should handle 0% progress', () => {
     const { container } = render(<LoadingIndicator progress={0} />);
 
-    const progressBar = container.querySelector('.bg-blue-500');
+    const progressBar = container.querySelector('.polydraw-loading-indicator__bar');
     expect(progressBar).toHaveStyle({ width: '0%' });
     expect(screen.getByText('0%')).toBeInTheDocument();
   });
@@ -41,7 +41,7 @@ describe('LoadingIndicator', () => {
   it('should handle 100% progress', () => {
     const { container } = render(<LoadingIndicator progress={100} />);
 
-    const progressBar = container.querySelector('.bg-blue-500');
+    const progressBar = container.querySelector('.polydraw-loading-indicator__bar');
     expect(progressBar).toHaveStyle({ width: '100%' });
     expect(screen.getByText('100%')).toBeInTheDocument();
   });
@@ -49,14 +49,14 @@ describe('LoadingIndicator', () => {
   it('should cap progress at 100%', () => {
     const { container } = render(<LoadingIndicator progress={150} />);
 
-    const progressBar = container.querySelector('.bg-blue-500');
+    const progressBar = container.querySelector('.polydraw-loading-indicator__bar');
     expect(progressBar).toHaveStyle({ width: '100%' });
   });
 
   it('should handle negative progress as 0%', () => {
     const { container } = render(<LoadingIndicator progress={-10} />);
 
-    const progressBar = container.querySelector('.bg-blue-500');
+    const progressBar = container.querySelector('.polydraw-loading-indicator__bar');
     expect(progressBar).toHaveStyle({ width: '0%' });
   });
 
@@ -69,7 +69,7 @@ describe('LoadingIndicator', () => {
   it('should render animated dots', () => {
     const { container } = render(<LoadingIndicator />);
 
-    const dots = container.querySelectorAll('.animate-bounce');
+    const dots = container.querySelectorAll('.polydraw-loading-indicator__dot');
     expect(dots).toHaveLength(3);
   });
 
@@ -94,14 +94,14 @@ describe('LoadingIndicator', () => {
   it('should have accessible structure', () => {
     const { container } = render(<LoadingIndicator />);
 
-    expect(container.querySelector('.h-2.bg-gray-200')).toBeInTheDocument();
-    expect(container.querySelector('.bg-blue-500')).toBeInTheDocument();
+    expect(container.querySelector('.polydraw-loading-indicator__track')).toBeInTheDocument();
+    expect(container.querySelector('.polydraw-loading-indicator__bar')).toBeInTheDocument();
   });
 
   it('should render progress bar with transition', () => {
     const { container } = render(<LoadingIndicator progress={50} />);
 
-    const progressBar = container.querySelector('.bg-blue-500');
+    const progressBar = container.querySelector('.polydraw-loading-indicator__bar');
     expect(progressBar).toHaveClass('transition-all');
   });
 });
