@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { CanvasState, ImageInfo } from '../types';
 import { updateCanvasTransform, resetCanvasView, calculateZoomedPosition } from '../utils';
+// import { runImageLoadBenchmark } from '../utils/imageLoadUtils';
 
 export interface UseCanvasReturn {
   canvasState: CanvasState;
@@ -61,18 +62,30 @@ export const useCanvas = (): UseCanvasReturn => {
     setCanvasState(prev => ({ ...prev, isMouseOverCanvas }));
   }, []);
 
-  const uploadImage = useCallback((file: File) => {
+  const uploadImage = useCallback(async (file: File) => {
     setImageInfo(prev => ({ ...prev, fileName: file.name }));
 
+    // Always run benchmark on image upload
+    // await runImageLoadBenchmark(file); // IMAGE_BENCHMARK
+
+    // Use fetch + Blob URL method for image loading
     const reader = new FileReader();
-    reader.onload = (event) => {
-      // Remove previous image
+    reader.onload = async (event) => {
+      // Clean up previous blob URL and remove previous image
+      if (imageInfo.blobUrl) {
+        URL.revokeObjectURL(imageInfo.blobUrl);
+      }
       if (imageInfo.element && canvasRef.current) {
         canvasRef.current.removeChild(imageInfo.element);
       }
 
+      // Convert to blob and create URL
+      const arrayBuffer = event.target?.result as ArrayBuffer;
+      const blob = new Blob([arrayBuffer], { type: file.type });
+      const blobUrl = URL.createObjectURL(blob);
+
       const img = new Image();
-      img.src = event.target?.result as string;
+      img.src = blobUrl;
       img.className = 'max-w-none';
       
       img.onload = () => {
@@ -80,7 +93,8 @@ export const useCanvas = (): UseCanvasReturn => {
           element: img,
           fileName: file.name,
           naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight
+          naturalHeight: img.naturalHeight,
+          blobUrl: blobUrl
         };
         setImageInfo(newImageInfo);
         
@@ -93,8 +107,8 @@ export const useCanvas = (): UseCanvasReturn => {
         canvasRef.current.appendChild(img);
       }
     };
-    reader.readAsDataURL(file);
-  }, [imageInfo.element]);
+    reader.readAsArrayBuffer(file);
+  }, [imageInfo.element, imageInfo.blobUrl]);
 
   const resetView = useCallback(() => {
     const { scale, offsetX, offsetY } = resetCanvasView(imageInfo, canvasContainerRef);
@@ -147,6 +161,15 @@ export const useCanvas = (): UseCanvasReturn => {
       document.removeEventListener('wheel', handleWheel);
     };
   }, [handleWheel]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imageInfo.blobUrl) {
+        URL.revokeObjectURL(imageInfo.blobUrl);
+      }
+    };
+  }, [imageInfo.blobUrl]);
 
   return {
     canvasState,

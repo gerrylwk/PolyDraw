@@ -22,4 +22,5 @@ export interface ImageInfo {
   fileName: string;
   naturalWidth: number;
   naturalHeight: number;
+  blobUrl?: string;
 }
