@@ -357,7 +357,6 @@ function logBenchmarkResults(file: File, results: BenchmarkResult[]): void {
   // Header
   const methodWidth = 28;
   const timeWidth = 12;
-  const memWidth = 12;
   
   console.log(
     'Method'.padEnd(methodWidth) + 

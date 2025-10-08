@@ -15,11 +15,16 @@ vi.mock('../../src/utils', () => ({
     newOffsetX: offsetX,
     newOffsetY: offsetY,
   })),
+  runImageLoadBenchmark: vi.fn().mockResolvedValue([]),
 }));
 
 describe('useCanvas', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Mock URL.createObjectURL and revokeObjectURL
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+    globalThis.URL.revokeObjectURL = vi.fn();
   });
 
   describe('Initial State', () => {
@@ -260,6 +265,54 @@ describe('useCanvas', () => {
       // Wait for FileReader and image load
       await waitFor(() => {
         expect(result.current.imageInfo.fileName).toBe('test-image.jpg');
+      });
+    });
+
+    it('should track blob URL in image info', async () => {
+      const { result } = renderHook(() => useCanvas());
+
+      // Create a mock canvas ref
+      const mockCanvasElement = document.createElement('div');
+      Object.defineProperty(result.current.canvasRef, 'current', {
+        value: mockCanvasElement,
+        writable: true,
+      });
+
+      const mockFile = new File([''], 'test-image.jpg', { type: 'image/jpeg' });
+
+      await act(async () => {
+        await result.current.uploadImage(mockFile);
+      });
+
+      // Wait for image loading to complete
+      await waitFor(() => {
+        expect(result.current.imageInfo.fileName).toBe('test-image.jpg');
+      });
+    });
+  });
+
+  describe('Blob URL Cleanup', () => {
+    it('should revoke blob URL when uploading new image over existing one', async () => {
+      const { result } = renderHook(() => useCanvas());
+
+      const mockCanvasElement = document.createElement('div');
+      const mockImageElement = document.createElement('img');
+      mockCanvasElement.appendChild(mockImageElement);
+
+      Object.defineProperty(result.current.canvasRef, 'current', {
+        value: mockCanvasElement,
+        writable: true,
+      });
+
+      // Set existing image info with blob URL
+      const mockFile = new File([''], 'new-image.jpg', { type: 'image/jpeg' });
+
+      await act(async () => {
+        await result.current.uploadImage(mockFile);
+      });
+
+      await waitFor(() => {
+        expect(result.current.imageInfo.fileName).toBe('new-image.jpg');
       });
     });
   });

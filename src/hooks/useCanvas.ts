@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { CanvasState, ImageInfo } from '../types';
 import { updateCanvasTransform, resetCanvasView, calculateZoomedPosition } from '../utils';
-import { runImageLoadBenchmark } from '../utils/imageLoadUtils';
+// import { runImageLoadBenchmark } from '../utils/imageLoadUtils';
 
 export interface UseCanvasReturn {
   canvasState: CanvasState;
