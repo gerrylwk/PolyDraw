@@ -209,7 +209,9 @@ function App() {
                     accept="image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) canvas.uploadImage(file);
+                      if (file) {
+                        canvas.uploadImage(file);
+                      }
                     }}
                     className="polydraw-file-input hidden"
                     data-testid="file-input"
@@ -232,7 +234,7 @@ function App() {
                 </div>
                 <div className="polydraw-file-name text-xs text-gray-500 mt-1 truncate" data-testid="file-name">
                   {canvas.imageInfo.fileName}
-              </div>
+                </div>
               </section>
 
               {/* View Type Section */}
