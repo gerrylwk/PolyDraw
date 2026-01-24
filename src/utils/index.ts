@@ -4,3 +4,4 @@ export * from './canvasUtils';
 export * from './shapeRenderer';
 export * from './parseUtils';
 export * from './imageLoadUtils';
+export * from './exportUtils';

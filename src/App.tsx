@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { Canvas } from './components/Canvas';
-import { 
-  ViewControlsWidget, 
-  ExportWidget
+import {
+  ViewControlsWidget,
+  ExportWidget,
+  ExportDropdown
 } from './components/Widgets';
 import { 
   useCanvas, 
@@ -10,11 +11,12 @@ import {
   useTools, 
   useKeyboardShortcuts 
 } from './hooks';
-import { 
-  getMousePosition, 
-  findPointAt, 
+import {
+  getMousePosition,
+  findPointAt,
   straightenLine,
-  createShapeSVG
+  createShapeSVG,
+  copyImageToClipboard
 } from './utils';
 import { CanvasSettings, Point, Shape, PolygonShape } from './types';
 
@@ -34,12 +36,18 @@ function App() {
   
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
 
-  // Keyboard shortcuts
+  const handleCopyToClipboard = useCallback(() => {
+    if (canvas.imageInfo.element) {
+      copyImageToClipboard(canvas.imageInfo, shapes.shapes);
+    }
+  }, [canvas.imageInfo, shapes.shapes]);
+
   useKeyboardShortcuts({
     toolState: tools.toolState,
     onDeletePoint: shapes.removePoint,
     onCompleteShape: shapes.completeCurrentShape,
-    onShiftChange: tools.setShiftPressed
+    onShiftChange: tools.setShiftPressed,
+    onCopyToClipboard: handleCopyToClipboard
   });
 
   // Canvas event handlers with full implementation
@@ -189,8 +197,16 @@ function App() {
     <div className="polydraw-app min-h-screen bg-gray-100" data-testid="polydraw-app">
       <div className="polydraw-app__container container mx-auto px-4 py-6">
         <header className="polydraw-app__header mb-6">
-          <h1 className="polydraw-app__title text-3xl font-bold text-gray-800">PolyDraw</h1>
-          <p className="polydraw-app__description text-gray-600">SVG Polygon Editor - Click and drag points, press Delete to remove selected point</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="polydraw-app__title text-3xl font-bold text-gray-800">PolyDraw</h1>
+              <p className="polydraw-app__description text-gray-600">SVG Polygon Editor - Click and drag points, press Delete to remove selected point</p>
+            </div>
+            <ExportDropdown
+              shapes={shapes.shapes}
+              imageInfo={canvas.imageInfo}
+            />
+          </div>
         </header>
 
         <div className="polydraw-app__layout flex flex-col lg:flex-row gap-6">
