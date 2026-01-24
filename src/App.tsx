@@ -505,12 +505,15 @@ function App() {
                                     min="0"
                                     max="255"
                                     value={shape.style.color.r}
-                                    onChange={(e) => shapes.updateShapeStyle(shape.id, {
-                                      color: {
-                                        ...shape.style.color,
-                                      r: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
-                                      }
-                                    })}
+                                    onChange={(e) => {
+                                      if (e.target.value === '') return;
+                                      shapes.updateShapeStyle(shape.id, {
+                                        color: {
+                                          ...shape.style.color,
+                                          r: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                        }
+                                      });
+                                    }}
                                     className="polydraw-color-input polydraw-color-input--red w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                     data-testid={`color-red-${shape.id}`}
                                   />
@@ -522,12 +525,15 @@ function App() {
                                     min="0"
                                     max="255"
                                     value={shape.style.color.g}
-                                    onChange={(e) => shapes.updateShapeStyle(shape.id, {
-                                      color: {
-                                        ...shape.style.color,
-                                      g: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
-                                      }
-                                    })}
+                                    onChange={(e) => {
+                                      if (e.target.value === '') return;
+                                      shapes.updateShapeStyle(shape.id, {
+                                        color: {
+                                          ...shape.style.color,
+                                          g: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                        }
+                                      });
+                                    }}
                                     className="polydraw-color-input polydraw-color-input--green w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                     data-testid={`color-green-${shape.id}`}
                                   />
@@ -539,12 +545,15 @@ function App() {
                                     min="0"
                                     max="255"
                                     value={shape.style.color.b}
-                                    onChange={(e) => shapes.updateShapeStyle(shape.id, {
-                                      color: {
-                                        ...shape.style.color,
-                                      b: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
-                                      }
-                                    })}
+                                    onChange={(e) => {
+                                      if (e.target.value === '') return;
+                                      shapes.updateShapeStyle(shape.id, {
+                                        color: {
+                                          ...shape.style.color,
+                                          b: Math.max(0, Math.min(255, parseInt(e.target.value) || 0))
+                                        }
+                                      });
+                                    }}
                                     className="polydraw-color-input polydraw-color-input--blue w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                     data-testid={`color-blue-${shape.id}`}
                                   />
