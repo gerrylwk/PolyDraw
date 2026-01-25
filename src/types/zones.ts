@@ -21,7 +21,7 @@ export interface ZoneSchema {
 }
 
 export const DEFAULT_ZONE_TYPES: ZoneType[] = [
-  { id: 'region', name: 'Region', color: '#3b82f6', isVisible: true },
-  { id: 'exclusion', name: 'Exclusion', color: '#ef4444', isVisible: true },
-  { id: 'highlight', name: 'Highlight', color: '#eab308', isVisible: true },
+  { id: 'region', name: 'region', color: '#3b82f6', isVisible: true },
+  { id: 'exclusion', name: 'exclusion', color: '#ef4444', isVisible: true },
+  { id: 'highlight', name: 'highlight', color: '#eab308', isVisible: true },
 ];
