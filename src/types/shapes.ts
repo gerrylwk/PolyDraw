@@ -17,6 +17,7 @@ export interface BaseShape {
   name: string;
   style: ShapeStyle;
   points: Point[];
+  zoneType?: string;
   // SVG elements for rendering
   element?: SVGElement;
   svg?: SVGSVGElement;

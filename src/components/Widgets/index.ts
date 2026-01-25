@@ -4,3 +4,5 @@ export * from './PropertiesWidget';
 export * from './ExportWidget';
 export * from './CoordinatesWidget';
 export * from './ExportDropdown';
+export * from './ZoneTypeLayerPanel';
+export * from './JsonSchemaWidget';
