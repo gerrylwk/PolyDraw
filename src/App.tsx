@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Canvas } from './components/Canvas';
 import {
   ViewControlsWidget,
@@ -19,7 +19,8 @@ import {
   findPointAt,
   straightenLine,
   createShapeSVG,
-  copyImageToClipboard
+  copyImageToClipboard,
+  updateShapesVisibility
 } from './utils';
 import { CanvasSettings, Point, Shape, PolygonShape } from './types';
 
@@ -38,6 +39,11 @@ function App() {
   });
   
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
+
+  useEffect(() => {
+    const visibleIds = zoneTypesHook.getVisibleZoneTypeIds();
+    updateShapesVisibility(shapes.shapes, visibleIds);
+  }, [zoneTypesHook.zoneTypes, shapes.shapes]);
 
   const handleCopyToClipboard = useCallback(() => {
     if (canvas.imageInfo.element) {
@@ -484,6 +490,8 @@ function App() {
                   shapes={shapes.shapes}
                   zoneTypes={zoneTypesHook.zoneTypes}
                   currentOpacity={polygonOpacity}
+                  normalize={canvasSettings.normalize}
+                  imageInfo={canvas.imageInfo}
                   onShapesReplace={(newShapes) => {
                     newShapes.forEach(shape => {
                       const svg = createShapeSVG(shape);

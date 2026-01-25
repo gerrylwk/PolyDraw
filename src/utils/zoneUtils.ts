@@ -1,7 +1,17 @@
-import { Shape, ZoneType, ZoneSchema, ZoneAnnotation, Point, PolygonShape } from '../types';
+import { Shape, ZoneType, ZoneSchema, ZoneAnnotation, Point, PolygonShape, ImageInfo } from '../types';
 import { generateRandomName, generateUniqueId } from './nameGenerator';
 
-export function pointsToSvgString(points: Point[]): string {
+export interface NormalizationOptions {
+  normalize: boolean;
+  imageInfo?: ImageInfo;
+}
+
+export function pointsToSvgString(points: Point[], options?: NormalizationOptions): string {
+  if (options?.normalize && options.imageInfo?.element) {
+    const imgWidth = options.imageInfo.naturalWidth || 1;
+    const imgHeight = options.imageInfo.naturalHeight || 1;
+    return points.map(p => `${(p.x / imgWidth).toFixed(4)} ${(p.y / imgHeight).toFixed(4)}`).join(' ');
+  }
   return points.map(p => `${Math.round(p.x)} ${Math.round(p.y)}`).join(' ');
 }
 
@@ -16,11 +26,15 @@ export function svgStringToPoints(svgString: string): Point[] {
   return points;
 }
 
-export function shapesToZoneSchema(shapes: Shape[], zoneTypes: ZoneType[]): ZoneSchema {
+export function shapesToZoneSchema(
+  shapes: Shape[],
+  zoneTypes: ZoneType[],
+  options?: NormalizationOptions
+): ZoneSchema {
   const zones: ZoneAnnotation[] = shapes.map(shape => ({
     name: shape.name || generateRandomName(),
     zone_type: shape.zoneType || 'region',
-    points: pointsToSvgString(shape.points),
+    points: pointsToSvgString(shape.points, options),
   }));
 
   const typeDefinitions = zoneTypes.map(type => ({
@@ -35,8 +49,12 @@ export function shapesToZoneSchema(shapes: Shape[], zoneTypes: ZoneType[]): Zone
   };
 }
 
-export function generateZoneJSON(shapes: Shape[], zoneTypes: ZoneType[]): string {
-  const schema = shapesToZoneSchema(shapes, zoneTypes);
+export function generateZoneJSON(
+  shapes: Shape[],
+  zoneTypes: ZoneType[],
+  options?: NormalizationOptions
+): string {
+  const schema = shapesToZoneSchema(shapes, zoneTypes, options);
   return JSON.stringify(schema, null, 2);
 }
 
@@ -106,7 +124,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 export function createDebouncedSerializer(
   delay: number = 250
 ): {
-  schedule: (shapes: Shape[], zoneTypes: ZoneType[], callback: (json: string) => void) => void;
+  schedule: (shapes: Shape[], zoneTypes: ZoneType[], callback: (json: string) => void, options?: NormalizationOptions) => void;
   cancel: () => void;
 } {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -126,13 +144,14 @@ export function createDebouncedSerializer(
   const schedule = (
     shapes: Shape[],
     zoneTypes: ZoneType[],
-    callback: (json: string) => void
+    callback: (json: string) => void,
+    options?: NormalizationOptions
   ) => {
     cancel();
 
     timeoutId = setTimeout(() => {
       const runSerialization = () => {
-        const json = generateZoneJSON(shapes, zoneTypes);
+        const json = generateZoneJSON(shapes, zoneTypes, options);
         callback(json);
       };
 
@@ -145,4 +164,19 @@ export function createDebouncedSerializer(
   };
 
   return { schedule, cancel };
+}
+
+export function updateShapesVisibility(
+  shapes: Shape[],
+  visibleZoneTypeIds: string[]
+): void {
+  shapes.forEach(shape => {
+    const isVisible = !shape.zoneType || visibleZoneTypeIds.includes(shape.zoneType);
+    if (shape.svg) {
+      shape.svg.style.display = isVisible ? '' : 'none';
+    }
+    shape.pointElements.forEach(el => {
+      el.style.display = isVisible ? '' : 'none';
+    });
+  });
 }

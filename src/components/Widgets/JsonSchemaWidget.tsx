@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Copy, Check, Pencil } from 'lucide-react';
 import { Button } from '../UI';
-import { Shape, ZoneType } from '../../types';
-import { generateZoneJSON, parseZoneJSON, createDebouncedSerializer } from '../../utils';
+import { Shape, ZoneType, ImageInfo } from '../../types';
+import { generateZoneJSON, parseZoneJSON, createDebouncedSerializer, NormalizationOptions } from '../../utils';
 
 export interface JsonSchemaWidgetProps {
   shapes: Shape[];
   zoneTypes: ZoneType[];
   currentOpacity: number;
+  normalize: boolean;
+  imageInfo: ImageInfo;
   onShapesReplace: (shapes: Shape[]) => void;
   onZoneTypesReplace: (types: ZoneType[]) => void;
   onClearShapes: () => void;
@@ -17,6 +19,8 @@ export const JsonSchemaWidget: React.FC<JsonSchemaWidgetProps> = ({
   shapes,
   zoneTypes,
   currentOpacity,
+  normalize,
+  imageInfo,
   onShapesReplace,
   onZoneTypesReplace,
   onClearShapes,
@@ -30,24 +34,29 @@ export const JsonSchemaWidget: React.FC<JsonSchemaWidgetProps> = ({
 
   const serializerRef = useRef(createDebouncedSerializer(250));
 
+  const normalizationOptions: NormalizationOptions = {
+    normalize,
+    imageInfo,
+  };
+
   useEffect(() => {
     if (!isEditing) {
       serializerRef.current.schedule(shapes, zoneTypes, (json) => {
         setJsonString(json);
-      });
+      }, normalizationOptions);
     }
 
     return () => {
       serializerRef.current.cancel();
     };
-  }, [shapes, zoneTypes, isEditing]);
+  }, [shapes, zoneTypes, isEditing, normalize, imageInfo]);
 
   useEffect(() => {
     if (!isEditing) {
-      const json = generateZoneJSON(shapes, zoneTypes);
+      const json = generateZoneJSON(shapes, zoneTypes, normalizationOptions);
       setJsonString(json);
     }
-  }, []);
+  }, [normalize, imageInfo]);
 
   const handleStartEdit = () => {
     setEditValue(jsonString);
