@@ -3,13 +3,16 @@ import { Canvas } from './components/Canvas';
 import {
   ViewControlsWidget,
   ExportWidget,
-  ExportDropdown
+  ExportDropdown,
+  ZoneTypeLayerPanel,
+  JsonSchemaWidget
 } from './components/Widgets';
-import { 
-  useCanvas, 
-  useShapes, 
-  useTools, 
-  useKeyboardShortcuts 
+import {
+  useCanvas,
+  useShapes,
+  useTools,
+  useKeyboardShortcuts,
+  useZoneTypes
 } from './hooks';
 import {
   getMousePosition,
@@ -21,10 +24,10 @@ import {
 import { CanvasSettings, Point, Shape, PolygonShape } from './types';
 
 function App() {
-  // Custom hooks for state management
   const canvas = useCanvas();
   const shapes = useShapes();
   const tools = useTools();
+  const zoneTypesHook = useZoneTypes();
 
   // Local state for canvas settings and opacity
   const [canvasSettings, setCanvasSettings] = useState<CanvasSettings>({
@@ -345,6 +348,15 @@ function App() {
                   </div>
                 </div>
               </section>
+
+              <ZoneTypeLayerPanel
+                zoneTypes={zoneTypesHook.zoneTypes}
+                shapes={shapes.shapes}
+                onAddType={zoneTypesHook.addZoneType}
+                onUpdateType={zoneTypesHook.updateZoneType}
+                onDeleteType={zoneTypesHook.deleteZoneType}
+                onToggleVisibility={zoneTypesHook.toggleVisibility}
+              />
               </div>
           </aside>
 
@@ -467,6 +479,38 @@ function App() {
                 onClearShapes={shapes.clearAllShapes}
               />
 
+              <div className="mt-6">
+                <JsonSchemaWidget
+                  shapes={shapes.shapes}
+                  zoneTypes={zoneTypesHook.zoneTypes}
+                  currentOpacity={polygonOpacity}
+                  onShapesReplace={(newShapes) => {
+                    newShapes.forEach(shape => {
+                      const svg = createShapeSVG(shape);
+                      if (canvas.canvasRef.current) {
+                        canvas.canvasRef.current.appendChild(svg);
+                      }
+                      const pointElements: HTMLDivElement[] = [];
+                      shape.points.forEach((point) => {
+                        const pointElement = document.createElement('div');
+                        pointElement.className = 'absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-move z-10 hover:scale-150 transition-transform';
+                        pointElement.setAttribute('data-point', 'true');
+                        pointElement.style.left = `${point.x}px`;
+                        pointElement.style.top = `${point.y}px`;
+                        if (canvas.canvasRef.current) {
+                          canvas.canvasRef.current.appendChild(pointElement);
+                        }
+                        pointElements.push(pointElement);
+                      });
+                      const updatedShape = { ...shape, svg, pointElements };
+                      shapes.addShape(updatedShape);
+                    });
+                  }}
+                  onZoneTypesReplace={zoneTypesHook.setZoneTypes}
+                  onClearShapes={shapes.clearAllShapes}
+                />
+              </div>
+
               {/* Edit Coordinates Section with Color Controls */}
               <section className="polydraw-shape-editor mt-4">
                 <h3 className="polydraw-section-title text-lg font-semibold mb-2 text-gray-800">Edit Coordinates</h3>
@@ -491,7 +535,26 @@ function App() {
                                 data-testid={`shape-name-input-${shape.id}`}
                               />
                             </div>
-                            
+
+                            {/* Zone Type Selector */}
+                            <div className="polydraw-zone-type-control">
+                              <label className="polydraw-control-label block text-sm font-medium text-gray-700 mb-1">
+                                Zone Type
+                              </label>
+                              <select
+                                value={shape.zoneType || 'region'}
+                                onChange={(e) => handleShapeUpdate(shape.id, { zoneType: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                                data-testid={`zone-type-select-${shape.id}`}
+                              >
+                                {zoneTypesHook.zoneTypes.map(type => (
+                                  <option key={type.id} value={type.id}>
+                                    {type.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
                             {/* Shape Color Controls */}
                             <div className="polydraw-shape-color-control">
                               <label className="polydraw-control-label block text-sm font-medium text-gray-700 mb-2">

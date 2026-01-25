@@ -13,13 +13,15 @@ export const getDefaultShapeStyle = (): ShapeStyle => ({
 export const createPolygonShape = (
   firstPoint: Point,
   name: string,
-  style?: Partial<ShapeStyle>
+  style?: Partial<ShapeStyle>,
+  zoneType?: string
 ): PolygonShape => ({
   id: createShapeId(),
   type: 'polygon',
   name,
   points: [firstPoint],
   style: { ...getDefaultShapeStyle(), ...style },
+  zoneType: zoneType || 'region',
   pointElements: [],
   element: undefined,
   svg: undefined,

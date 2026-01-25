@@ -5,3 +5,5 @@ export * from './shapeRenderer';
 export * from './parseUtils';
 export * from './imageLoadUtils';
 export * from './exportUtils';
+export * from './nameGenerator';
+export * from './zoneUtils';
