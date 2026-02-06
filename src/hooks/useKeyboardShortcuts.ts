@@ -9,6 +9,8 @@ export interface UseKeyboardShortcutsProps {
   onCopyToClipboard?: () => void;
   onTogglePathTester?: () => void;
   onClearPath?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -18,7 +20,9 @@ export const useKeyboardShortcuts = ({
   onShiftChange,
   onCopyToClipboard,
   onTogglePathTester,
-  onClearPath
+  onClearPath,
+  onUndo,
+  onRedo
 }: UseKeyboardShortcutsProps): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -37,6 +41,20 @@ export const useKeyboardShortcuts = ({
       }
 
       if (isTextInput) return;
+
+      const key = e.key.toLowerCase();
+
+      if ((e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        onUndo?.();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && ((key === 'z' && e.shiftKey) || key === 'y')) {
+        e.preventDefault();
+        onRedo?.();
+        return;
+      }
 
       if (e.key === 't' || e.key === 'T') {
         e.preventDefault();
@@ -76,5 +94,5 @@ export const useKeyboardShortcuts = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [toolState.selectedPoint, toolState.currentTool, onDeletePoint, onCompleteShape, onShiftChange, onCopyToClipboard, onTogglePathTester, onClearPath]);
+  }, [toolState.selectedPoint, toolState.currentTool, onDeletePoint, onCompleteShape, onShiftChange, onCopyToClipboard, onTogglePathTester, onClearPath, onUndo, onRedo]);
 };
