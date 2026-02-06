@@ -94,6 +94,7 @@ function App() {
     );
 
     if (tools.toolState.currentTool === 'path-tester') {
+      e.preventDefault();
       pathTesting.startDrawing(position, shapes.shapes);
       return;
     }

@@ -10,7 +10,13 @@ interface PathOverlayProps {
 const STATUS_FILL: Record<string, string> = {
   inside: '#10b981',
   outside: '#ef4444',
-  edge: '#3b82f6',
+  edge: '#0ea5e9',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  inside: 'IN',
+  outside: 'OUT',
+  edge: 'EDGE',
 };
 
 export const PathOverlay: React.FC<PathOverlayProps> = ({
@@ -42,10 +48,15 @@ export const PathOverlay: React.FC<PathOverlayProps> = ({
       {validPoints.map((point, i) => {
         const isHovered = hoveredPointIndex === point.index;
         const fill = STATUS_FILL[point.status] || '#ef4444';
+        const label = STATUS_LABEL[point.status] || 'OUT';
         const r = isHovered ? 5 : 3.5;
         const polyNames = point.containingPolygons
           .map(id => shapeMap.get(id) || id)
           .join(', ');
+
+        const labelWidth = label.length * 6.5 + 8;
+        const labelX = point.x + 6;
+        const labelY = point.y - 6;
 
         return (
           <g key={i}>
@@ -57,31 +68,54 @@ export const PathOverlay: React.FC<PathOverlayProps> = ({
               stroke="white"
               strokeWidth="1.5"
               opacity={isHovered ? 1 : 0.9}
-              style={{ vectorEffect: 'non-scaling-stroke', transition: 'r 0.1s ease' }}
+              style={{ vectorEffect: 'non-scaling-stroke' }}
             />
+
+            <rect
+              x={labelX}
+              y={labelY - 9}
+              width={labelWidth}
+              height={14}
+              rx="3"
+              fill={fill}
+              opacity="0.9"
+            />
+            <text
+              x={labelX + labelWidth / 2}
+              y={labelY + 1}
+              fill="white"
+              fontSize="8"
+              fontFamily="monospace"
+              fontWeight="bold"
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
+              {label}
+            </text>
+
             {isHovered && (
               <g>
                 <rect
                   x={point.x + 8}
-                  y={point.y - 28}
-                  width={Math.max(120, (polyNames.length * 6) + 40)}
+                  y={point.y + 8}
+                  width={Math.max(140, (polyNames.length * 5.5) + 50)}
                   height={polyNames ? 36 : 22}
                   rx="4"
-                  fill="rgba(0,0,0,0.8)"
+                  fill="rgba(0,0,0,0.85)"
                 />
                 <text
                   x={point.x + 14}
-                  y={point.y - 14}
+                  y={point.y + 22}
                   fill="white"
                   fontSize="10"
                   fontFamily="monospace"
                 >
-                  #{point.index + 1} ({Math.round(point.x)}, {Math.round(point.y)}) - {point.status}
+                  #{point.index + 1} ({Math.round(point.x)}, {Math.round(point.y)})
                 </text>
                 {polyNames && (
                   <text
                     x={point.x + 14}
-                    y={point.y - 2}
+                    y={point.y + 34}
                     fill="#a5f3fc"
                     fontSize="9"
                     fontFamily="monospace"

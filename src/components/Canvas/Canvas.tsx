@@ -63,6 +63,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         onMouseUp={onMouseUp}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
+        onDragStart={currentTool === 'path-tester' ? (e) => e.preventDefault() : undefined}
       >
         <div
           ref={canvasRef}
