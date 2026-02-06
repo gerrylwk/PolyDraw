@@ -13,12 +13,6 @@ const STATUS_FILL: Record<string, string> = {
   edge: '#0ea5e9',
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  inside: 'IN',
-  outside: 'OUT',
-  edge: 'EDGE',
-};
-
 export const PathOverlay: React.FC<PathOverlayProps> = ({
   testPath,
   shapes,
@@ -48,86 +42,62 @@ export const PathOverlay: React.FC<PathOverlayProps> = ({
       {validPoints.map((point, i) => {
         const isHovered = hoveredPointIndex === point.index;
         const fill = STATUS_FILL[point.status] || '#ef4444';
-        const label = STATUS_LABEL[point.status] || 'OUT';
         const r = isHovered ? 5 : 3.5;
+
+        return (
+          <circle
+            key={i}
+            cx={point.x}
+            cy={point.y}
+            r={r}
+            fill={fill}
+            stroke="white"
+            strokeWidth="1.5"
+            opacity={isHovered ? 1 : 0.9}
+            style={{ vectorEffect: 'non-scaling-stroke' }}
+          />
+        );
+      })}
+
+      {hoveredPointIndex != null && (() => {
+        const point = validPoints.find(p => p.index === hoveredPointIndex);
+        if (!point) return null;
         const polyNames = point.containingPolygons
           .map(id => shapeMap.get(id) || id)
           .join(', ');
-
-        const labelWidth = label.length * 6.5 + 8;
-        const labelX = point.x + 6;
-        const labelY = point.y - 6;
-
         return (
-          <g key={i}>
-            <circle
-              cx={point.x}
-              cy={point.y}
-              r={r}
-              fill={fill}
-              stroke="white"
-              strokeWidth="1.5"
-              opacity={isHovered ? 1 : 0.9}
-              style={{ vectorEffect: 'non-scaling-stroke' }}
-            />
-
+          <g>
             <rect
-              x={labelX}
-              y={labelY - 9}
-              width={labelWidth}
-              height={14}
-              rx="3"
-              fill={fill}
-              opacity="0.9"
+              x={point.x + 8}
+              y={point.y + 8}
+              width={Math.max(140, (polyNames.length * 5.5) + 50)}
+              height={polyNames ? 36 : 22}
+              rx="4"
+              fill="rgba(0,0,0,0.85)"
             />
             <text
-              x={labelX + labelWidth / 2}
-              y={labelY + 1}
+              x={point.x + 14}
+              y={point.y + 22}
               fill="white"
-              fontSize="8"
+              fontSize="10"
               fontFamily="monospace"
-              fontWeight="bold"
-              textAnchor="middle"
-              dominantBaseline="middle"
             >
-              {label}
+              #{point.index + 1} ({Math.round(point.x)}, {Math.round(point.y)})
             </text>
-
-            {isHovered && (
-              <g>
-                <rect
-                  x={point.x + 8}
-                  y={point.y + 8}
-                  width={Math.max(140, (polyNames.length * 5.5) + 50)}
-                  height={polyNames ? 36 : 22}
-                  rx="4"
-                  fill="rgba(0,0,0,0.85)"
-                />
-                <text
-                  x={point.x + 14}
-                  y={point.y + 22}
-                  fill="white"
-                  fontSize="10"
-                  fontFamily="monospace"
-                >
-                  #{point.index + 1} ({Math.round(point.x)}, {Math.round(point.y)})
-                </text>
-                {polyNames && (
-                  <text
-                    x={point.x + 14}
-                    y={point.y + 34}
-                    fill="#a5f3fc"
-                    fontSize="9"
-                    fontFamily="monospace"
-                  >
-                    {polyNames}
-                  </text>
-                )}
-              </g>
+            {polyNames && (
+              <text
+                x={point.x + 14}
+                y={point.y + 34}
+                fill="#a5f3fc"
+                fontSize="9"
+                fontFamily="monospace"
+              >
+                {polyNames}
+              </text>
             )}
           </g>
         );
-      })}
+      })()}
     </svg>
   );
 };
