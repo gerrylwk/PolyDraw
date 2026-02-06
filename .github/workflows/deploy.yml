@@ -52,8 +52,8 @@ jobs:
       run: |
         echo "Waiting for application to start..."
         sleep 15
-        echo "✅ Deployment completed!"
-        echo "🚀 Application should be running at: http://localhost:3000"
+        echo "Deployment completed!"
+        echo "Application should be running at: http://localhost:3000"
     
     - name: Tag successful deployment
       if: success()
