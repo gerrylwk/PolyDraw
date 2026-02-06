@@ -6,12 +6,6 @@ const STATUS_PREFIX_MAP: Record<string, PathPointStatus> = {
   '[EDGE]': 'edge',
 };
 
-const STATUS_LABEL_MAP: Record<PathPointStatus, string> = {
-  inside: '[IN]',
-  outside: '[OUT]',
-  edge: '[EDGE]',
-};
-
 export const parsePathFromText = (text: string): PathTestPoint[] => {
   const lines = text.split('\n');
   const points: PathTestPoint[] = [];

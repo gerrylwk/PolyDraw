@@ -120,8 +120,6 @@ export const usePathTesting = (): UsePathTestingReturn => {
       let finalPath = testPath;
       let invalidIdx = 0;
       const fullPath: PathTestPoint[] = [];
-      const lines = text.split('\n');
-
       for (let i = 0; i < parsed.length; i++) {
         if (parsed[i].validFormat && invalidIdx < testPath.length) {
           fullPath.push(testPath[invalidIdx]);
