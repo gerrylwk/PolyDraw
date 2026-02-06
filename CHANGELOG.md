@@ -7,7 +7,19 @@ PolyDraw is a React-based SVG polygon editor built with TypeScript and Vite. It 
 
 ## Version History & Feature Development
 
-### 🚀 **Latest Update: Image Loading Optimization & Performance Benchmarking**
+### **Path Tester Viewport Refinements**
+
+#### **Changes**
+- Removed status label boxes (IN/OUT/EDGE) from path test points on the viewport for a cleaner display
+- Hover tooltip (black coordinate info box) now renders at the topmost layer of the SVG overlay, preventing it from being obscured by other drawn coordinates
+- Tooltip is rendered in a single pass after all point circles, ensuring it always appears above every element in the path overlay
+
+#### **Files Modified**
+- `src/components/Canvas/PathOverlay.tsx` - Removed status label rect/text elements; refactored tooltip to render last in SVG draw order
+
+---
+
+### 🚀 **Image Loading Optimization & Performance Benchmarking**
 
 #### **Overview: Performance-Driven Image Loading**
 Implemented comprehensive benchmarking system to evaluate and optimize image loading methods for better performance, especially with large image files and diverse file formats.
