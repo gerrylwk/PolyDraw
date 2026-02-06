@@ -14,6 +14,7 @@ export interface CanvasProps {
   canvasRef: React.RefObject<HTMLDivElement>;
   testPath?: PathTestPoint[];
   hoveredPointIndex?: number | null;
+  polygonHoverState?: 'none' | 'first-point' | 'existing-point';
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
@@ -31,6 +32,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   canvasRef,
   testPath,
   hoveredPointIndex,
+  polygonHoverState = 'none',
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -41,7 +43,11 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   const getCursor = () => {
     if (currentTool === 'path-tester') return 'crosshair';
-    if (currentTool === 'polygon') return 'crosshair';
+    if (currentTool === 'polygon') {
+      if (polygonHoverState === 'first-point') return 'pointer';
+      if (polygonHoverState === 'existing-point') return 'not-allowed';
+      return 'crosshair';
+    }
     if (isDragging) return 'grabbing';
     return 'grab';
   };

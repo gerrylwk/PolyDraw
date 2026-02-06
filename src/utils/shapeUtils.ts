@@ -111,7 +111,26 @@ export const getShapeDisplayName = (shapeType: ShapeType): string => {
   return displayNames[shapeType];
 };
 
-export const calculateShapeBounds = (shape: Shape): { 
+export const findNearbyPointOnShape = (
+  x: number,
+  y: number,
+  shape: Shape,
+  scale: number
+): { index: number; isFirstPoint: boolean } | null => {
+  const threshold = 15 / scale;
+
+  for (let i = 0; i < shape.points.length; i++) {
+    const point = shape.points[i];
+    const distance = Math.sqrt(Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2));
+    if (distance <= threshold) {
+      return { index: i, isFirstPoint: i === 0 };
+    }
+  }
+
+  return null;
+};
+
+export const calculateShapeBounds = (shape: Shape): {
   minX: number; 
   minY: number; 
   maxX: number; 

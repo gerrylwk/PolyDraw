@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas } from './components/Canvas';
 import {
   ViewControlsWidget,
@@ -19,6 +19,7 @@ import {
 import {
   getMousePosition,
   findPointAt,
+  findNearbyPointOnShape,
   straightenLine,
   createShapeSVG,
   copyImageToClipboard,
@@ -44,6 +45,8 @@ function App() {
   });
   
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
+  const [polygonHoverState, setPolygonHoverState] = useState<'none' | 'first-point' | 'existing-point'>('none');
+  const highlightedPointRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const visibleIds = zoneTypesHook.getVisibleZoneTypeIds();
@@ -107,6 +110,13 @@ function App() {
         const threshold = 15 / canvas.canvasState.scale;
         
         if (distance <= threshold) {
+          if (highlightedPointRef.current) {
+            highlightedPointRef.current.style.borderColor = '';
+            highlightedPointRef.current.style.boxShadow = '';
+            highlightedPointRef.current.style.transform = '';
+            highlightedPointRef.current = null;
+          }
+          setPolygonHoverState('none');
           shapes.completeCurrentShape();
           return;
         }
@@ -115,6 +125,10 @@ function App() {
       if (!shapes.currentShape) {
         shapes.startNewPolygon(position, canvas.canvasRef);
       } else {
+        const nearbyPoint = findNearbyPointOnShape(
+          position.x, position.y, shapes.currentShape, canvas.canvasState.scale
+        );
+        if (nearbyPoint) return;
         shapes.addPointToShape(position, tools.toolState.isShiftPressed);
       }
     } else if (tools.toolState.currentTool === 'select') {
@@ -171,14 +185,43 @@ function App() {
       );
       e.preventDefault();
     } else if (tools.toolState.currentTool === 'polygon' && shapes.currentShape) {
-      // Update preview line for polygon
+      const nearbyPoint = findNearbyPointOnShape(
+        position.x, position.y, shapes.currentShape, canvas.canvasState.scale
+      );
+
+      if (highlightedPointRef.current) {
+        highlightedPointRef.current.style.borderColor = '';
+        highlightedPointRef.current.style.boxShadow = '';
+        highlightedPointRef.current.style.transform = '';
+        highlightedPointRef.current = null;
+      }
+
+      if (nearbyPoint) {
+        const canClose = nearbyPoint.isFirstPoint && shapes.currentShape.points.length >= 3;
+        setPolygonHoverState(canClose ? 'first-point' : 'existing-point');
+        const el = shapes.currentShape.pointElements[nearbyPoint.index];
+        if (el) {
+          highlightedPointRef.current = el;
+          if (canClose) {
+            el.style.borderColor = '#22c55e';
+            el.style.boxShadow = '0 0 0 3px rgba(34,197,94,0.4)';
+            el.style.transform = 'translate(-50%,-50%) scale(1.6)';
+          } else {
+            el.style.borderColor = '#ef4444';
+            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.4)';
+            el.style.transform = 'translate(-50%,-50%) scale(1.3)';
+          }
+        }
+      } else {
+        setPolygonHoverState('none');
+      }
+
       if (shapes.currentShape.type === 'polygon' && 'previewLine' in shapes.currentShape) {
         const polygonShape = shapes.currentShape as PolygonShape & { previewLine?: SVGLineElement };
         if (polygonShape.previewLine) {
           const lastPoint = shapes.currentShape.points[shapes.currentShape.points.length - 1];
           let previewPosition = position;
 
-      // Apply line straightening to preview line if Shift is pressed
           if (tools.toolState.isShiftPressed) {
             previewPosition = straightenLine(lastPoint, position);
           }
@@ -188,6 +231,10 @@ function App() {
           polygonShape.previewLine.setAttribute('x2', previewPosition.x.toString());
           polygonShape.previewLine.setAttribute('y2', previewPosition.y.toString());
         }
+      }
+    } else if (tools.toolState.currentTool === 'polygon' && !shapes.currentShape) {
+      if (polygonHoverState !== 'none') {
+        setPolygonHoverState('none');
       }
     }
   }, [
@@ -436,6 +483,7 @@ function App() {
               canvasRef={canvas.canvasRef}
               testPath={pathTesting.state.testPath}
               hoveredPointIndex={pathTesting.hoveredPointIndex}
+              polygonHoverState={polygonHoverState}
               onMouseDown={handleCanvasMouseDown}
               onMouseMove={handleCanvasMouseMove}
               onMouseUp={handleCanvasMouseUp}
