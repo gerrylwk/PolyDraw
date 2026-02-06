@@ -7,6 +7,8 @@ export interface UseKeyboardShortcutsProps {
   onCompleteShape: () => void;
   onShiftChange: (pressed: boolean) => void;
   onCopyToClipboard?: () => void;
+  onTogglePathTester?: () => void;
+  onClearPath?: () => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -14,7 +16,9 @@ export const useKeyboardShortcuts = ({
   onDeletePoint,
   onCompleteShape,
   onShiftChange,
-  onCopyToClipboard
+  onCopyToClipboard,
+  onTogglePathTester,
+  onClearPath
 }: UseKeyboardShortcutsProps): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -32,12 +36,30 @@ export const useKeyboardShortcuts = ({
         }
       }
 
+      if (isTextInput) return;
+
+      if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        onTogglePathTester?.();
+        return;
+      }
+
+      if (toolState.currentTool === 'path-tester' && (e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        onClearPath?.();
+        return;
+      }
+
       if (e.key === 'Delete' && toolState.selectedPoint && toolState.currentTool === 'select') {
         e.preventDefault();
         onDeletePoint(toolState.selectedPoint);
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        onCompleteShape();
+        if (toolState.currentTool === 'path-tester') {
+          onTogglePathTester?.();
+        } else {
+          onCompleteShape();
+        }
       }
     };
 
@@ -54,5 +76,5 @@ export const useKeyboardShortcuts = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [toolState.selectedPoint, toolState.currentTool, onDeletePoint, onCompleteShape, onShiftChange, onCopyToClipboard]);
+  }, [toolState.selectedPoint, toolState.currentTool, onDeletePoint, onCompleteShape, onShiftChange, onCopyToClipboard, onTogglePathTester, onClearPath]);
 };

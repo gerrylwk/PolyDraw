@@ -1,5 +1,6 @@
 import React from 'react';
-import { Shape, CanvasState, ImageInfo, ViewType, ToolType, DraggedPoint } from '../../types';
+import { Shape, CanvasState, ImageInfo, ViewType, ToolType, DraggedPoint, PathTestPoint } from '../../types';
+import { PathOverlay } from './PathOverlay';
 
 export interface CanvasProps {
   canvasState: CanvasState;
@@ -11,6 +12,8 @@ export interface CanvasProps {
   draggedPoint: DraggedPoint | null;
   canvasContainerRef: React.RefObject<HTMLDivElement>;
   canvasRef: React.RefObject<HTMLDivElement>;
+  testPath?: PathTestPoint[];
+  hoveredPointIndex?: number | null;
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
@@ -23,9 +26,11 @@ export const Canvas: React.FC<CanvasProps> = ({
   imageInfo,
   viewType,
   currentTool,
-//   isDraggingPoint,
+  shapes,
   canvasContainerRef,
   canvasRef,
+  testPath,
+  hoveredPointIndex,
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -33,6 +38,13 @@ export const Canvas: React.FC<CanvasProps> = ({
   onMouseLeave
 }) => {
   const { isDragging } = canvasState;
+
+  const getCursor = () => {
+    if (currentTool === 'path-tester') return 'crosshair';
+    if (currentTool === 'polygon') return 'crosshair';
+    if (isDragging) return 'grabbing';
+    return 'grab';
+  };
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -51,16 +63,14 @@ export const Canvas: React.FC<CanvasProps> = ({
         onMouseUp={onMouseUp}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
+        onDragStart={currentTool === 'path-tester' ? (e) => e.preventDefault() : undefined}
       >
         <div
           ref={canvasRef}
-          className={`absolute transform-gpu origin-top-left ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-          style={{
-            cursor: currentTool === 'polygon' ? 'crosshair' : isDragging ? 'grabbing' : 'grab'
-          }}
+          className={`absolute transform-gpu origin-top-left`}
+          style={{ cursor: getCursor() }}
           data-canvas
         >
-          {/* Double panoramic view divider line */}
           {viewType === 'double-panoramic' && imageInfo.element && (
             <div
               className="absolute left-0 right-0 border-t-2 border-dashed border-red-400 pointer-events-none z-20"
@@ -70,7 +80,21 @@ export const Canvas: React.FC<CanvasProps> = ({
               }}
             />
           )}
+
+          {currentTool === 'path-tester' && testPath && testPath.length > 0 && (
+            <PathOverlay
+              testPath={testPath}
+              shapes={shapes}
+              hoveredPointIndex={hoveredPointIndex ?? null}
+            />
+          )}
         </div>
+
+        {currentTool === 'path-tester' && (
+          <div className="absolute top-2 left-2 bg-amber-500/90 text-white text-xs font-medium px-2 py-1 rounded pointer-events-none z-30">
+            Path Tester Active -- Draw to test points
+          </div>
+        )}
       </div>
     </div>
   );

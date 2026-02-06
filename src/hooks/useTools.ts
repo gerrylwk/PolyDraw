@@ -15,6 +15,7 @@ export interface UseToolsReturn {
 export const useTools = (): UseToolsReturn => {
   const [toolState, setToolState] = useState<ToolState>({
     currentTool: 'polygon',
+    previousTool: null,
     isShiftPressed: false,
     isDraggingPoint: false,
     selectedPoint: null
@@ -23,7 +24,11 @@ export const useTools = (): UseToolsReturn => {
   const [draggedPoint, setDraggedPoint] = useState<DraggedPoint | null>(null);
 
   const setCurrentTool = useCallback((tool: ToolType) => {
-    setToolState(prev => ({ ...prev, currentTool: tool }));
+    setToolState(prev => ({
+      ...prev,
+      previousTool: prev.currentTool,
+      currentTool: tool,
+    }));
   }, []);
 
   const setShiftPressed = useCallback((pressed: boolean) => {
