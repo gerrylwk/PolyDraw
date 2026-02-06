@@ -15,6 +15,7 @@ describe('useTools', () => {
 
       expect(result.current.toolState).toEqual({
         currentTool: 'polygon',
+        previousTool: null,
         isShiftPressed: false,
         isDraggingPoint: false,
         selectedPoint: null,

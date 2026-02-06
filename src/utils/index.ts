@@ -7,3 +7,5 @@ export * from './imageLoadUtils';
 export * from './exportUtils';
 export * from './nameGenerator';
 export * from './zoneUtils';
+export * from './geometryUtils';
+export * from './pathParsingUtils';

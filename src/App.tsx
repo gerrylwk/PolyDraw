@@ -5,14 +5,16 @@ import {
   ExportWidget,
   ExportDropdown,
   ZoneTypeLayerPanel,
-  JsonSchemaWidget
+  JsonSchemaWidget,
+  PathTestingPanel
 } from './components/Widgets';
 import {
   useCanvas,
   useShapes,
   useTools,
   useKeyboardShortcuts,
-  useZoneTypes
+  useZoneTypes,
+  usePathTesting
 } from './hooks';
 import {
   getMousePosition,
@@ -29,6 +31,9 @@ function App() {
   const shapes = useShapes();
   const tools = useTools();
   const zoneTypesHook = useZoneTypes();
+  const pathTesting = usePathTesting();
+
+  const isPathTesterActive = tools.toolState.currentTool === 'path-tester';
 
   // Local state for canvas settings and opacity
   const [canvasSettings, setCanvasSettings] = useState<CanvasSettings>({
@@ -51,12 +56,25 @@ function App() {
     }
   }, [canvas.imageInfo, shapes.shapes]);
 
+  const handleTogglePathTester = useCallback(() => {
+    if (isPathTesterActive) {
+      const prev = tools.toolState.previousTool;
+      tools.setCurrentTool(prev && prev !== 'path-tester' ? prev : 'select');
+      pathTesting.clearPath();
+    } else {
+      shapes.completeCurrentShape();
+      tools.setCurrentTool('path-tester');
+    }
+  }, [isPathTesterActive, tools, shapes, pathTesting]);
+
   useKeyboardShortcuts({
     toolState: tools.toolState,
     onDeletePoint: shapes.removePoint,
     onCompleteShape: shapes.completeCurrentShape,
     onShiftChange: tools.setShiftPressed,
-    onCopyToClipboard: handleCopyToClipboard
+    onCopyToClipboard: handleCopyToClipboard,
+    onTogglePathTester: handleTogglePathTester,
+    onClearPath: pathTesting.clearPath
   });
 
   // Canvas event handlers with full implementation
@@ -74,6 +92,11 @@ function App() {
       canvasSettings.snapThreshold,
       canvasSettings.viewType
     );
+
+    if (tools.toolState.currentTool === 'path-tester') {
+      pathTesting.startDrawing(position, shapes.shapes);
+      return;
+    }
 
     if (tools.toolState.currentTool === 'polygon') {
       // Check if clicking on the first point to complete polygon
@@ -125,6 +148,11 @@ function App() {
       canvasSettings.viewType
     );
 
+    if (tools.toolState.currentTool === 'path-tester' && pathTesting.state.isDrawing) {
+      pathTesting.addPathPoint(position, shapes.shapes);
+      return;
+    }
+
     if (tools.toolState.isDraggingPoint && tools.draggedPoint) {
       // Update the dragged point
       const updatedPoints = tools.draggedPoint.shape.points.map((point, index) =>
@@ -169,13 +197,17 @@ function App() {
   ]);
 
   const handleCanvasMouseUp = useCallback(() => {
+    if (tools.toolState.currentTool === 'path-tester' && pathTesting.state.isDrawing) {
+      pathTesting.completeDrawing(shapes.shapes);
+      return;
+    }
     if (tools.toolState.isDraggingPoint) {
       tools.setDraggingPoint(false);
     }
     if (canvas.canvasState.isDragging) {
       canvas.setDragging(false);
     }
-  }, [canvas, tools]);
+  }, [canvas, tools, pathTesting, shapes.shapes]);
 
   // Widget event handlers
   const handleShapeUpdate = useCallback((shapeId: string, updates: Partial<Shape>) => {
@@ -285,37 +317,60 @@ function App() {
               {/* Drawing Tools Section */}
               <section className="polydraw-drawing-tools-section border-t border-gray-200 pt-4">
                 <h3 className="polydraw-section-title block text-sm font-medium text-gray-700 mb-2">Drawing Tools</h3>
-                <div className="polydraw-tool-buttons grid grid-cols-2 gap-2">
+                <div className="polydraw-tool-buttons grid grid-cols-3 gap-2">
                   <button
-                    onClick={() => tools.setCurrentTool('select')}
-                    className={`polydraw-tool-button polydraw-tool-button--select flex items-center justify-center gap-2 py-2 px-4 rounded transition-colors ${
+                    onClick={() => { if (!isPathTesterActive) tools.setCurrentTool('select'); }}
+                    className={`polydraw-tool-button polydraw-tool-button--select flex items-center justify-center gap-2 py-2 px-3 rounded transition-colors text-sm ${
                       tools.toolState.currentTool === 'select'
                         ? 'polydraw-tool-button--active bg-blue-500 text-white'
-                        : 'polydraw-tool-button--inactive bg-gray-200 hover:bg-gray-300 text-gray-800'
+                        : isPathTesterActive
+                          ? 'opacity-40 cursor-not-allowed bg-gray-200 text-gray-800'
+                          : 'polydraw-tool-button--inactive bg-gray-200 hover:bg-gray-300 text-gray-800'
                     }`}
+                    disabled={isPathTesterActive}
                     data-testid="tool-button-select"
                     data-tool="select"
                   >
-                    <svg className="polydraw-tool-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="polydraw-tool-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
                     </svg>
                     <span className="polydraw-tool-label">Select</span>
                   </button>
                   <button
-                    onClick={() => tools.setCurrentTool('polygon')}
-                    className={`polydraw-tool-button polydraw-tool-button--polygon flex items-center justify-center gap-2 py-2 px-4 rounded transition-colors ${
+                    onClick={() => { if (!isPathTesterActive) tools.setCurrentTool('polygon'); }}
+                    className={`polydraw-tool-button polydraw-tool-button--polygon flex items-center justify-center gap-2 py-2 px-3 rounded transition-colors text-sm ${
                       tools.toolState.currentTool === 'polygon'
                         ? 'polydraw-tool-button--active bg-blue-500 text-white'
-                        : 'polydraw-tool-button--inactive bg-gray-200 hover:bg-gray-300 text-gray-800'
+                        : isPathTesterActive
+                          ? 'opacity-40 cursor-not-allowed bg-gray-200 text-gray-800'
+                          : 'polydraw-tool-button--inactive bg-gray-200 hover:bg-gray-300 text-gray-800'
                     }`}
+                    disabled={isPathTesterActive}
                     data-testid="tool-button-polygon"
                     data-tool="polygon"
                   >
-                    <svg className="polydraw-tool-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg className="polydraw-tool-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="5,12 19,12"/>
                       <polyline points="12,5 12,19"/>
                     </svg>
                     <span className="polydraw-tool-label">Polygon</span>
+                  </button>
+                  <button
+                    onClick={handleTogglePathTester}
+                    className={`polydraw-tool-button polydraw-tool-button--path-tester flex items-center justify-center gap-2 py-2 px-3 rounded transition-colors text-sm ${
+                      isPathTesterActive
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                    data-testid="tool-button-path-tester"
+                    data-tool="path-tester"
+                    title="Path Tester (T)"
+                  >
+                    <svg className="polydraw-tool-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20h9"/>
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    <span className="polydraw-tool-label">Test</span>
                   </button>
                 </div>
               </section>
@@ -378,13 +433,15 @@ function App() {
               draggedPoint={tools.draggedPoint}
               canvasContainerRef={canvas.canvasContainerRef}
               canvasRef={canvas.canvasRef}
-                onMouseDown={handleCanvasMouseDown}
-                onMouseMove={handleCanvasMouseMove}
-                onMouseUp={handleCanvasMouseUp}
+              testPath={pathTesting.state.testPath}
+              hoveredPointIndex={pathTesting.hoveredPointIndex}
+              onMouseDown={handleCanvasMouseDown}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={handleCanvasMouseUp}
               onMouseEnter={() => canvas.setMouseOverCanvas(true)}
-                onMouseLeave={() => {
+              onMouseLeave={() => {
                 canvas.setMouseOverCanvas(false);
-                  handleCanvasMouseUp();
+                handleCanvasMouseUp();
               }}
             />
 
@@ -699,6 +756,19 @@ function App() {
             </section>
           </main>
         </div>
+
+        {isPathTesterActive && (
+          <PathTestingPanel
+            testPath={pathTesting.state.testPath}
+            textContent={pathTesting.state.textContent}
+            isCollapsed={pathTesting.state.isPanelCollapsed}
+            shapes={shapes.shapes}
+            onToggleCollapse={pathTesting.togglePanelCollapse}
+            onClearPath={pathTesting.clearPath}
+            onTextChange={(text) => pathTesting.updateFromText(text, shapes.shapes)}
+            onPointHover={pathTesting.setHoveredPointIndex}
+          />
+        )}
       </div>
     </div>
   );

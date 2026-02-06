@@ -6,3 +6,4 @@ export * from './CoordinatesWidget';
 export * from './ExportDropdown';
 export * from './ZoneTypeLayerPanel';
 export * from './JsonSchemaWidget';
+export * from './PathTestingPanel';
