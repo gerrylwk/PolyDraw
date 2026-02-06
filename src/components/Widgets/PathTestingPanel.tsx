@@ -186,11 +186,20 @@ export const PathTestingPanel: React.FC<PathTestingPanelProps> = ({
                     <span className="font-mono text-gray-700">
                       {Math.round(point.x)}, {Math.round(point.y)}
                     </span>
-                    {polyNames && (
-                      <span className={`ml-auto truncate max-w-[100px] ${colors.text}`} title={polyNames}>
-                        {polyNames}
+                    <span className={`ml-auto flex items-center gap-1.5 flex-shrink-0`}>
+                      {polyNames && (
+                        <span className={`truncate max-w-[80px] ${colors.text}`} title={polyNames}>
+                          {polyNames}
+                        </span>
+                      )}
+                      <span className={`inline-block px-1.5 py-0.5 rounded font-semibold text-[10px] leading-none ${colors.bg} ${colors.text} border ${
+                        point.status === 'inside' ? 'border-emerald-200' :
+                        point.status === 'edge' ? 'border-sky-200' :
+                        'border-red-200'
+                      }`}>
+                        {point.status === 'inside' ? 'IN' : point.status === 'edge' ? 'EDGE' : 'OUT'}
                       </span>
-                    )}
+                    </span>
                   </div>
                 );
               })}
