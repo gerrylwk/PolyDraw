@@ -84,6 +84,8 @@ export const useShapes = (): UseShapesReturn => {
   const shapesRef = useRef<Shape[]>([]);
   shapesRef.current = shapes;
 
+  const drawingRedoStackRef = useRef<Point[]>([]);
+
   const serializeCurrentShapes = useCallback((): ShapeSnapshot[] => {
     return shapesRef.current.map(serializeShape);
   }, []);
@@ -101,17 +103,99 @@ export const useShapes = (): UseShapesReturn => {
     setSelectedShape(null);
   }, []);
 
+  const createPointElement = useCallback((
+    x: number,
+    y: number,
+    _shape: Shape,
+    _index: number,
+    canvasRef: React.RefObject<HTMLDivElement>
+  ): HTMLDivElement => {
+    const point = document.createElement('div');
+    point.className = 'absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-move z-10 hover:scale-150 transition-transform';
+    point.setAttribute('data-point', 'true');
+    point.style.left = `${x}px`;
+    point.style.top = `${y}px`;
+
+    if (canvasRef.current) {
+      canvasRef.current.appendChild(point);
+    }
+
+    return point;
+  }, []);
+
+  const updatePreviewLine = useCallback((shape: Shape) => {
+    if (shape.type === 'polygon') {
+      const polygonShape = shape as PolygonShape;
+      if (polygonShape.previewLine && shape.points.length > 0) {
+        const lastPoint = shape.points[shape.points.length - 1];
+        polygonShape.previewLine.setAttribute('x1', lastPoint.x.toString());
+        polygonShape.previewLine.setAttribute('y1', lastPoint.y.toString());
+      }
+    }
+  }, []);
+
   const handleUndo = useCallback(() => {
-    if (currentShape) return;
+    if (currentShape) {
+      if (currentShape.points.length <= 1) {
+        destroyShapeDOM(currentShape);
+        setShapes(prev => prev.filter(s => s.id !== currentShape.id));
+        setCurrentShape(null);
+        drawingRedoStackRef.current = [];
+        history.discardLast();
+        return;
+      }
+
+      const removedPoint = currentShape.points[currentShape.points.length - 1];
+      drawingRedoStackRef.current.push(removedPoint);
+
+      const lastPointEl = currentShape.pointElements[currentShape.pointElements.length - 1];
+      lastPointEl?.remove();
+
+      const updatedShape = {
+        ...currentShape,
+        points: currentShape.points.slice(0, -1),
+        pointElements: currentShape.pointElements.slice(0, -1),
+      };
+
+      setShapes(prev => prev.map(s => s.id === updatedShape.id ? updatedShape : s));
+      setCurrentShape(updatedShape);
+      updateShapeDisplay(updatedShape);
+      updatePreviewLine(updatedShape);
+      return;
+    }
+
     const previous = history.undo(serializeCurrentShapes());
     if (previous) rebuildFromSnapshots(previous);
-  }, [currentShape, history, serializeCurrentShapes, rebuildFromSnapshots]);
+  }, [currentShape, history, serializeCurrentShapes, rebuildFromSnapshots, updatePreviewLine]);
 
   const handleRedo = useCallback(() => {
+    if (currentShape && drawingRedoStackRef.current.length > 0) {
+      const point = drawingRedoStackRef.current.pop()!;
+
+      const canvasElement = document.querySelector('[data-canvas]') as HTMLDivElement;
+      const pointElement = createPointElement(
+        point.x, point.y, currentShape, currentShape.points.length,
+        { current: canvasElement }
+      );
+
+      const updatedShape = {
+        ...currentShape,
+        points: [...currentShape.points, point],
+        pointElements: [...currentShape.pointElements, pointElement],
+      };
+
+      setShapes(prev => prev.map(s => s.id === updatedShape.id ? updatedShape : s));
+      setCurrentShape(updatedShape);
+      updateShapeDisplay(updatedShape);
+      updatePreviewLine(updatedShape);
+      return;
+    }
+
     if (currentShape) return;
+
     const next = history.redo(serializeCurrentShapes());
     if (next) rebuildFromSnapshots(next);
-  }, [currentShape, history, serializeCurrentShapes, rebuildFromSnapshots]);
+  }, [currentShape, history, serializeCurrentShapes, rebuildFromSnapshots, createPointElement, updatePreviewLine]);
 
   const addShape = useCallback((shape: Shape) => {
     setShapes(prev => [...prev, shape]);
@@ -149,31 +233,12 @@ export const useShapes = (): UseShapesReturn => {
     setSelectedShape(null);
   }, [saveSnapshot]);
 
-  const createPointElement = useCallback((
-    x: number,
-    y: number,
-    _shape: Shape,
-    _index: number,
-    canvasRef: React.RefObject<HTMLDivElement>
-  ): HTMLDivElement => {
-    const point = document.createElement('div');
-    point.className = 'absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-move z-10 hover:scale-150 transition-transform';
-    point.setAttribute('data-point', 'true');
-    point.style.left = `${x}px`;
-    point.style.top = `${y}px`;
-
-    if (canvasRef.current) {
-      canvasRef.current.appendChild(point);
-    }
-
-    return point;
-  }, []);
-
   const startNewPolygon = useCallback((
     point: Point,
     canvasRef: React.RefObject<HTMLDivElement>
   ): PolygonShape => {
     saveSnapshot();
+    drawingRedoStackRef.current = [];
 
     const newPolygon = createPolygonShape(point, `Polygon ${shapesRef.current.length + 1}`);
 
@@ -203,6 +268,8 @@ export const useShapes = (): UseShapesReturn => {
 
   const addPointToShape = useCallback((point: Point, isShiftPressed: boolean) => {
     if (!currentShape) return;
+
+    drawingRedoStackRef.current = [];
 
     let finalPosition = point;
 
@@ -236,10 +303,13 @@ export const useShapes = (): UseShapesReturn => {
   const completeCurrentShape = useCallback(() => {
     if (!currentShape) return;
 
+    drawingRedoStackRef.current = [];
+
     if (currentShape.type === 'polygon' && currentShape.points.length < 3) {
       destroyShapeDOM(currentShape);
       setShapes(prev => prev.filter(s => s.id !== currentShape.id));
       setCurrentShape(null);
+      history.discardLast();
       return;
     }
 
@@ -252,7 +322,7 @@ export const useShapes = (): UseShapesReturn => {
     }
 
     setCurrentShape(null);
-  }, [currentShape]);
+  }, [currentShape, history]);
 
   const updateShapePoints = useCallback((shapeId: string, newPoints: Point[]) => {
     updateShape(shapeId, { points: newPoints });
@@ -300,12 +370,14 @@ export const useShapes = (): UseShapesReturn => {
     }
   }, [selectedShape, saveSnapshot, updateShape]);
 
+  const hasDrawingRedo = drawingRedoStackRef.current.length > 0;
+
   return {
     shapes,
     currentShape,
     selectedShape,
-    canUndo: history.canUndo,
-    canRedo: history.canRedo,
+    canUndo: currentShape ? currentShape.points.length > 0 : history.canUndo,
+    canRedo: currentShape ? hasDrawingRedo : history.canRedo,
     addShape,
     removeShape,
     updateShape,

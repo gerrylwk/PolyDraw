@@ -16,6 +16,7 @@ export interface UseHistoryReturn {
   pushState: (snapshots: ShapeSnapshot[]) => void;
   undo: (current: ShapeSnapshot[]) => ShapeSnapshot[] | null;
   redo: (current: ShapeSnapshot[]) => ShapeSnapshot[] | null;
+  discardLast: () => void;
   canUndo: boolean;
   canRedo: boolean;
   clear: () => void;
@@ -53,6 +54,13 @@ export const useHistory = (): UseHistoryReturn => {
     return next;
   }, [bump]);
 
+  const discardLast = useCallback(() => {
+    if (pastRef.current.length > 0) {
+      pastRef.current.pop();
+      bump();
+    }
+  }, [bump]);
+
   const clear = useCallback(() => {
     pastRef.current = [];
     futureRef.current = [];
@@ -63,6 +71,7 @@ export const useHistory = (): UseHistoryReturn => {
     pushState,
     undo,
     redo,
+    discardLast,
     canUndo: pastRef.current.length > 0,
     canRedo: futureRef.current.length > 0,
     clear,
