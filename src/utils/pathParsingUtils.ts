@@ -58,7 +58,7 @@ export const parsePathFromText = (text: string): PathTestPoint[] => {
 
 export const formatPathToText = (points: PathTestPoint[]): string => {
   return points
-    .map(p => `${STATUS_LABEL_MAP[p.status]} ${Math.round(p.x)}, ${Math.round(p.y)}`)
+    .map(p => `${Math.round(p.x)}, ${Math.round(p.y)}`)
     .join('\n');
 };
 
