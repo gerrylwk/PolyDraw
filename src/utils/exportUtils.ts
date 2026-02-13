@@ -1,4 +1,5 @@
 import { Shape, ImageInfo } from '../types';
+import { copyImageBlobToClipboard } from './clipboardUtils';
 
 export type ExportFormat = 'png' | 'jpeg' | 'svg';
 
@@ -59,14 +60,11 @@ export const copyImageToClipboard = async (
         return;
       }
 
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        resolve(true);
-      } catch {
-        resolve(false);
+      const result = await copyImageBlobToClipboard(blob);
+      if (!result.success) {
+        console.error('Failed to copy image:', result.error);
       }
+      resolve(result.success);
     }, 'image/png');
   });
 };
