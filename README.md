@@ -175,3 +175,7 @@ If you encounter any issues or have questions:
 ---
 
 **Happy Polygon Drawing! 🎨**
+
+
+## Upcoming
+1. Polygon simplification - reducing point count while preserving shape
