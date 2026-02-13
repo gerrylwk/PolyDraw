@@ -77,7 +77,9 @@ function App() {
     onShiftChange: tools.setShiftPressed,
     onCopyToClipboard: handleCopyToClipboard,
     onTogglePathTester: handleTogglePathTester,
-    onClearPath: pathTesting.clearPath
+    onClearPath: pathTesting.clearPath,
+    onUndo: shapes.undo,
+    onRedo: shapes.redo
   });
 
   // Canvas event handlers with full implementation
@@ -134,6 +136,7 @@ function App() {
     } else if (tools.toolState.currentTool === 'select') {
       const point = findPointAt(position.x, position.y, shapes.shapes, canvas.canvasState.scale);
       if (point) {
+        shapes.saveSnapshot();
         tools.setDraggingPoint(true, point);
         tools.setSelectedPoint(point);
         e.preventDefault();
@@ -431,6 +434,10 @@ function App() {
                 polygonOpacity={polygonOpacity}
                 onOpacityChange={handleOpacityChange}
                 onClearAll={shapes.clearAllShapes}
+                onUndo={shapes.undo}
+                onRedo={shapes.redo}
+                canUndo={shapes.canUndo}
+                canRedo={shapes.canRedo}
               />
 
               {/* Line Straightening Info Section */}
