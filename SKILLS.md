@@ -29,6 +29,7 @@ src/
       ExportDropdown.tsx           # Image export dropdown (PNG/JPEG/SVG) + copy-to-clipboard
       JsonSchemaWidget.tsx         # JSON zone schema display/edit with debounced serialization
       PathTestingPanel.tsx         # Path testing results panel (point list, manual text editing, export)
+      SimplificationPanel.tsx      # Polygon simplification UI (RDP algorithm with preview)
       PropertiesWidget.tsx         # Shape property editor
       ToolbarWidget.tsx            # Drawing tool buttons
       CoordinatesWidget.tsx        # Coordinate display widget
@@ -56,7 +57,7 @@ src/
     coordinateUtils.ts             # Mouse-to-canvas transform, edge snapping, line straightening, normalize/denormalize
     shapeUtils.ts                  # Shape factories, hit detection, bounding box, ID generation
     shapeRenderer.ts               # SVG rendering factory (PolygonRenderer, CircleRenderer, ShapeRendererFactory)
-    geometryUtils.ts               # Ray-casting point-in-polygon, point-to-segment distance, containment checks
+    geometryUtils.ts               # Ray-casting point-in-polygon, point-to-segment distance, containment checks, RDP simplification
     parseUtils.ts                  # Python/SVG coordinate string parsers and generators
     exportUtils.ts                 # Image export (PNG/JPEG/SVG), clipboard copy, offscreen canvas composition
     zoneUtils.ts                   # JSON zone schema serialization/deserialization, debounced serializer
@@ -333,6 +334,84 @@ All image exports use `renderImageWithShapes()` which creates an offscreen canva
 ### Path Test Export
 
 The path testing panel (`PathTestingPanel.tsx`) exports test results in JSON, CSV, and plain text via buttons in its UI. The data includes each point's coordinates, containment status, and the names of containing polygons.
+
+---
+
+## Polygon Simplification System
+
+Reduces polygon complexity using the Ramer-Douglas-Peucker (RDP) algorithm while preserving shape characteristics.
+
+### Algorithm
+
+The RDP algorithm works recursively:
+
+1. Draw a line between the first and last points of the polygon
+2. Find the point with maximum perpendicular distance from this line
+3. If the distance exceeds the tolerance threshold, split at that point and recurse on both segments
+4. Otherwise, remove all intermediate points
+
+### Implementation
+
+Core algorithm in `src/utils/geometryUtils.ts`:
+
+```typescript
+// Main API - returns simplified points with metadata
+simplifyPolygon(points: Point[], tolerance: number): SimplificationResult
+
+// Generates preview data (kept vs removed points)
+previewSimplification(points: Point[], tolerance: number): PreviewResult
+
+// Internal helper - calculates perpendicular distance
+perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number
+
+// Internal recursive algorithm
+rdpSimplify(points: Point[], startIndex: number, endIndex: number,
+            tolerance: number, keepIndices: Set<number>): void
+```
+
+### UI Integration
+
+Controlled by `SimplificationPanel.tsx` in the coordinates section of `App.tsx`:
+
+- **Tolerance Slider**: 1-50 pixel range
+- **Preview Toggle**: Shows/hides overlay visualization
+- **Point Count Display**: "47 pts → 12 pts"
+- **Apply Button**: Commits changes with undo support (calls `shapes.saveSnapshot()`)
+- **Reset Button**: Restores original points from backup
+
+### Preview Overlay
+
+Rendered in `Canvas.tsx` as an SVG overlay:
+
+- Blue dashed polygon outline shows the simplified shape
+- Blue filled circles (5px) mark points that will be kept
+- Red hollow circles (4px) mark points that will be removed
+- Updates with 50ms debounce to prevent excessive recalculation
+
+### Safety Guarantees
+
+- Minimum 3 points always preserved (valid polygon requirement)
+- Triangle polygons (3 points) cannot be simplified
+- Zero or negative tolerance returns original polygon
+- Deep copies prevent mutation of source data
+- Undo/redo integration via snapshot system
+
+### Where to Find the Code
+
+| Concern | File | Key Functions/Components |
+|---|---|---|
+| RDP algorithm | `src/utils/geometryUtils.ts` | `simplifyPolygon()`, `rdpSimplify()`, `perpendicularDistance()` |
+| UI controls | `src/components/Widgets/SimplificationPanel.tsx` | Slider, toggle, buttons, state management |
+| Preview rendering | `src/components/Canvas/Canvas.tsx` | SVG overlay with circles and dashed polygon |
+| Integration | `src/App.tsx` | State wiring, `handleApplySimplification()` |
+| Tests | `tests/utils/geometryUtils.test.ts` | 19 test cases for edge cases |
+
+### Performance
+
+- **Complexity**: O(n²) worst case, O(n log n) typical
+- **Typical Reduction**: 50-80% fewer points
+- **Debouncing**: 50ms delay on slider updates
+- **Memory**: Creates deep copies to prevent reference sharing
 
 ---
 

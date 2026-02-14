@@ -28,6 +28,11 @@ A simple SVG polygon editor built with React, TypeScript, and Vite. PolyDraw all
 - **Opacity Control**: Adjust polygon transparency (0-100%)
 - **Visual Feedback**: Selected points highlighted in red
 - **Delete Polygons**: Remove individual polygons or clear all
+- **Polygon Simplification**: Reduce point count using RDP algorithm with interactive preview
+  - Adjustable tolerance slider (1-50px)
+  - Live preview showing kept vs removed points
+  - Undo support with reset to original
+  - Maintains minimum 3 points for valid polygons
 
 ### Output Options
 - **Python Format**: Generate Python coordinate arrays
@@ -175,7 +180,3 @@ If you encounter any issues or have questions:
 ---
 
 **Happy Polygon Drawing! 🎨**
-
-
-## Upcoming
-1. Polygon simplification - reducing point count while preserving shape
