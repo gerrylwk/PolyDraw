@@ -6,7 +6,9 @@ import {
   ExportDropdown,
   ZoneTypeLayerPanel,
   JsonSchemaWidget,
-  PathTestingPanel
+  PathTestingPanel,
+  SimplificationPanel,
+  SimplificationPreview
 } from './components/Widgets';
 import {
   useCanvas,
@@ -47,6 +49,7 @@ function App() {
   const [polygonOpacity, setPolygonOpacity] = useState(0.2);
   const [polygonHoverState, setPolygonHoverState] = useState<'none' | 'first-point' | 'existing-point'>('none');
   const highlightedPointRef = useRef<HTMLDivElement | null>(null);
+  const [simplificationPreview, setSimplificationPreview] = useState<SimplificationPreview | null>(null);
 
   useEffect(() => {
     const visibleIds = zoneTypesHook.getVisibleZoneTypeIds();
@@ -279,11 +282,19 @@ function App() {
 
   const handleOpacityChange = useCallback((opacity: number) => {
     setPolygonOpacity(opacity);
-    // Update all shapes with new opacity
     shapes.shapes.forEach(shape => {
       shapes.updateShapeStyle(shape.id, { opacity });
     });
   }, [shapes]);
+
+  const handleApplySimplification = useCallback((shapeId: string, newPoints: Point[]) => {
+    shapes.saveSnapshot();
+    shapes.updateShapePoints(shapeId, newPoints);
+  }, [shapes]);
+
+  const handleSimplificationPreviewChange = useCallback((preview: SimplificationPreview | null) => {
+    setSimplificationPreview(preview);
+  }, []);
 
   return (
     <div className="polydraw-app min-h-screen bg-gray-100" data-testid="polydraw-app">
@@ -491,6 +502,7 @@ function App() {
               testPath={pathTesting.state.testPath}
               hoveredPointIndex={pathTesting.hoveredPointIndex}
               polygonHoverState={polygonHoverState}
+              simplificationPreview={simplificationPreview}
               onMouseDown={handleCanvasMouseDown}
               onMouseMove={handleCanvasMouseMove}
               onMouseUp={handleCanvasMouseUp}
@@ -765,6 +777,15 @@ function App() {
                                 </svg>
                               </button>
                             </div>
+
+                            {/* Simplification Panel */}
+                            {shape.type === 'polygon' && (
+                              <SimplificationPanel
+                                shape={shape}
+                                onApplySimplification={handleApplySimplification}
+                                onPreviewChange={handleSimplificationPreviewChange}
+                              />
+                            )}
                           </div>
                           
                           {/* Point Coordinates */}

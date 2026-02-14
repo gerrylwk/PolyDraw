@@ -104,3 +104,159 @@ export const runContainmentChecks = (
 ): { status: PathPointStatus; containingPolygons: string[] }[] => {
   return path.map(point => checkPointContainment(point, shapes));
 };
+
+const perpendicularDistance = (
+  point: Point,
+  lineStart: Point,
+  lineEnd: Point
+): number => {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const lengthSq = dx * dx + dy * dy;
+
+  if (lengthSq === 0) {
+    return Math.sqrt(
+      (point.x - lineStart.x) ** 2 + (point.y - lineStart.y) ** 2
+    );
+  }
+
+  const area = Math.abs(
+    dy * point.x - dx * point.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x
+  );
+  return area / Math.sqrt(lengthSq);
+};
+
+const rdpSimplify = (
+  points: Point[],
+  startIndex: number,
+  endIndex: number,
+  tolerance: number,
+  keepIndices: Set<number>
+): void => {
+  if (endIndex <= startIndex + 1) return;
+
+  let maxDist = 0;
+  let maxIndex = startIndex;
+
+  for (let i = startIndex + 1; i < endIndex; i++) {
+    const dist = perpendicularDistance(
+      points[i],
+      points[startIndex],
+      points[endIndex]
+    );
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIndex = i;
+    }
+  }
+
+  if (maxDist > tolerance) {
+    keepIndices.add(maxIndex);
+    rdpSimplify(points, startIndex, maxIndex, tolerance, keepIndices);
+    rdpSimplify(points, maxIndex, endIndex, tolerance, keepIndices);
+  }
+};
+
+export interface SimplificationResult {
+  points: Point[];
+  originalCount: number;
+  simplifiedCount: number;
+  keptIndices: number[];
+}
+
+export const simplifyPolygon = (
+  points: Point[],
+  tolerance: number
+): SimplificationResult => {
+  const originalCount = points.length;
+
+  if (points.length <= 3) {
+    return {
+      points: [...points],
+      originalCount,
+      simplifiedCount: points.length,
+      keptIndices: points.map((_, i) => i),
+    };
+  }
+
+  if (tolerance <= 0) {
+    return {
+      points: [...points],
+      originalCount,
+      simplifiedCount: points.length,
+      keptIndices: points.map((_, i) => i),
+    };
+  }
+
+  const keepIndices = new Set<number>();
+  keepIndices.add(0);
+  keepIndices.add(points.length - 1);
+
+  rdpSimplify(points, 0, points.length - 1, tolerance, keepIndices);
+
+  let sortedIndices = Array.from(keepIndices).sort((a, b) => a - b);
+
+  if (sortedIndices.length < 3) {
+    let maxDist = 0;
+    let maxIndex = -1;
+
+    for (let i = 1; i < points.length - 1; i++) {
+      if (keepIndices.has(i)) continue;
+
+      let minDistToKept = Infinity;
+      for (const keptIdx of sortedIndices) {
+        const dx = points[i].x - points[keptIdx].x;
+        const dy = points[i].y - points[keptIdx].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        minDistToKept = Math.min(minDistToKept, dist);
+      }
+
+      if (minDistToKept > maxDist) {
+        maxDist = minDistToKept;
+        maxIndex = i;
+      }
+    }
+
+    if (maxIndex !== -1) {
+      keepIndices.add(maxIndex);
+      sortedIndices = Array.from(keepIndices).sort((a, b) => a - b);
+    }
+  }
+
+  const simplifiedPoints = sortedIndices.map(i => ({ ...points[i] }));
+
+  return {
+    points: simplifiedPoints,
+    originalCount,
+    simplifiedCount: simplifiedPoints.length,
+    keptIndices: sortedIndices,
+  };
+};
+
+export const previewSimplification = (
+  points: Point[],
+  tolerance: number
+): { kept: Point[]; removed: Point[]; keptIndices: number[]; removedIndices: number[] } => {
+  const result = simplifyPolygon(points, tolerance);
+  const keptSet = new Set(result.keptIndices);
+
+  const kept: Point[] = [];
+  const removed: Point[] = [];
+  const removedIndices: number[] = [];
+
+  points.forEach((point, index) => {
+    if (keptSet.has(index)) {
+      kept.push(point);
+    } else {
+      removed.push(point);
+      removedIndices.push(index);
+    }
+  });
+
+  return {
+    kept,
+    removed,
+    keptIndices: result.keptIndices,
+    removedIndices,
+  };
+};
