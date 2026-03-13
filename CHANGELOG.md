@@ -7,6 +7,80 @@ PolyDraw is a React-based SVG polygon editor built with TypeScript and Vite. It 
 
 ## Version History & Feature Development
 
+### **Polygon Crop to Image Feature**
+
+#### Overview
+Added instant polygon crop functionality with a dedicated button beside each polygon's delete button. Clicking this button extracts the image region inside the polygon boundary, automatically handles transparency, and downloads the result as a PNG file.
+
+#### Key Features
+- **Crop Button UI**: Blue crop icon button positioned beside the delete button for each polygon
+- **Instant Download**: One-click crop and download with no preview or confirmation needed
+- **Smart Clipping**: Canvas clipping path ensures transparent background outside polygon shape
+- **Boundary Enforcement**: Automatically clamps crop region to image boundaries (0 to naturalWidth/naturalHeight)
+- **Minimum Size Validation**: Enforces 1x1 pixel minimum crop size for validity
+- **Intelligent Naming**: Generates descriptive filenames using pattern: `{originalname}_{polygonname}_cropped.png`
+
+#### Technical Implementation
+
+##### Crop Utility Function
+```typescript
+export const cropPolygonToImage = async (
+  shape: Shape,
+  imageInfo: ImageInfo
+): Promise<void> => {
+  // Calculate bounding box from polygon points
+  const bbox = calculateBoundingBox(shape.points);
+
+  // Clamp to image boundaries
+  const clampedBbox = clampToImageBounds(bbox, imageInfo);
+
+  // Validate minimum size (1x1px)
+  if (width < 1 || height < 1) return;
+
+  // Create canvas with clipping path
+  ctx.clip(); // Polygon shape becomes clipping region
+
+  // Draw cropped image portion
+  ctx.drawImage(imageInfo.element, ...);
+
+  // Generate filename and trigger download
+  triggerDownload(url, fileName);
+};
+```
+
+##### UI Integration
+- Crop button positioned in shape actions section (App.tsx:779-790)
+- Blue circular button with crop icon (matching delete button styling)
+- Hover effects with 110% scale transition
+- Tooltip shows "Crop to image" on hover
+
+##### Filename Generation
+- Extracts original filename and removes extension
+- Sanitizes polygon name (removes special characters, replaces spaces with underscores)
+- Pattern: `{originalname}_{polygonname}_cropped.png`
+- Fallback to "image" if no original filename exists
+
+#### Usage Example
+1. Upload an image and create a polygon around a region of interest
+2. Locate the polygon in the "Edit Coordinates" section
+3. Click the blue crop button beside the delete button
+4. Cropped PNG with transparency automatically downloads
+5. Filename example: `photo_region1_cropped.png`
+
+#### Files Modified
+- `src/utils/exportUtils.ts` - Added `cropPolygonToImage()` utility function
+- `src/App.tsx` - Added crop button UI and `handleCropPolygon()` handler
+- `src/utils/index.ts` - Exports crop utility (already included via exportUtils)
+
+#### Benefits
+- Quick extraction of image regions without external tools
+- Transparent background outside polygon for overlay use cases
+- Smart boundary handling prevents invalid crops
+- Descriptive filenames for easy file organization
+- Zero configuration - works immediately for all polygons
+
+---
+
 ### 🔺 **Polygon Simplification System**
 
 #### **Overview: RDP Algorithm Implementation**
