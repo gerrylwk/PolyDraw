@@ -2,6 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { ChevronRight, ChevronLeft, X, Download, FileText, Clipboard } from 'lucide-react';
 import { PathTestPoint, Shape } from '../../types';
 import { exportPathToJSON, exportPathToCSV } from '../../utils/pathParsingUtils';
+import { copyTextToClipboard } from '../../utils/clipboardUtils';
 
 interface PathTestingPanelProps {
   testPath: PathTestPoint[];
@@ -76,8 +77,12 @@ export const PathTestingPanel: React.FC<PathTestingPanelProps> = ({
     URL.revokeObjectURL(url);
   }, [validPoints, shapes]);
 
-  const handleCopyClipboard = useCallback(() => {
-    navigator.clipboard.writeText(textContent);
+  const handleCopyClipboard = useCallback(async () => {
+    const result = await copyTextToClipboard(textContent);
+    if (!result.success) {
+      console.error('Failed to copy:', result.error);
+      alert(`Copy failed: ${result.error || 'Unknown error'}`);
+    }
   }, [textContent]);
 
   if (isCollapsed) {

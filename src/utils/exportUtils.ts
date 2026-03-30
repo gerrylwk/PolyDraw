@@ -1,4 +1,5 @@
 import { Shape, ImageInfo } from '../types';
+import { copyImageBlobToClipboard } from './clipboardUtils';
 
 export type ExportFormat = 'png' | 'jpeg' | 'svg';
 
@@ -59,14 +60,11 @@ export const copyImageToClipboard = async (
         return;
       }
 
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
-        resolve(true);
-      } catch {
-        resolve(false);
+      const result = await copyImageBlobToClipboard(blob);
+      if (!result.success) {
+        console.error('Failed to copy image:', result.error);
       }
+      resolve(result.success);
     }, 'image/png');
   });
 };
@@ -147,4 +145,89 @@ const triggerDownload = (url: string, fileName: string): void => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+export const cropPolygonToImage = async (
+  shape: Shape,
+  imageInfo: ImageInfo
+): Promise<void> => {
+  if (!imageInfo.element || shape.points.length < 3) {
+    console.warn('Cannot crop: image not loaded or invalid polygon');
+    return;
+  }
+
+  const points = shape.points;
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  points.forEach(point => {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  });
+
+  minX = Math.max(0, Math.floor(minX));
+  minY = Math.max(0, Math.floor(minY));
+  maxX = Math.min(imageInfo.naturalWidth, Math.ceil(maxX));
+  maxY = Math.min(imageInfo.naturalHeight, Math.ceil(maxY));
+
+  const width = maxX - minX;
+  const height = maxY - minY;
+
+  if (width < 1 || height < 1) {
+    console.warn('Crop dimensions too small (minimum 1x1px)');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.warn('Cannot get canvas context');
+    return;
+  }
+
+  ctx.save();
+
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    const x = point.x - minX;
+    const y = point.y - minY;
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.drawImage(
+    imageInfo.element,
+    minX, minY, width, height,
+    0, 0, width, height
+  );
+
+  ctx.restore();
+
+  const originalName = imageInfo.fileName.replace(/\.[^/.]+$/, '') || 'image';
+  const shapeName = shape.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  const fileName = `${originalName}_${shapeName}_cropped.png`;
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        triggerDownload(url, fileName);
+        URL.revokeObjectURL(url);
+      }
+      resolve();
+    }, 'image/png');
+  });
 };

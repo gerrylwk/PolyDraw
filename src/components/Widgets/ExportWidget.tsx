@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Shape, ImageInfo, CanvasSettings } from '../../types';
 import { Button } from '../UI';
-import { parsePythonString, parseSVGString } from '../../utils';
+import { parsePythonString, parseSVGString, copyTextToClipboard } from '../../utils';
 
 export interface ExportWidgetProps {
   shapes: Shape[];
@@ -76,12 +76,13 @@ export const ExportWidget: React.FC<ExportWidgetProps> = ({
   };
 
   const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
+    const result = await copyTextToClipboard(text);
+    if (result.success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+    } else {
+      console.error('Failed to copy:', result.error);
+      alert(`Copy failed: ${result.error || 'Unknown error'}`);
     }
   };
 

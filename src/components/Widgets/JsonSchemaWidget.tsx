@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Copy, Check, Pencil } from 'lucide-react';
 import { Button } from '../UI';
 import { Shape, ZoneType, ImageInfo } from '../../types';
-import { generateZoneJSON, parseZoneJSON, createDebouncedSerializer, NormalizationOptions } from '../../utils';
+import { generateZoneJSON, parseZoneJSON, createDebouncedSerializer, NormalizationOptions, copyTextToClipboard } from '../../utils';
 
 export interface JsonSchemaWidgetProps {
   shapes: Shape[];
@@ -103,12 +103,13 @@ export const JsonSchemaWidget: React.FC<JsonSchemaWidgetProps> = ({
   };
 
   const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(jsonString);
+    const result = await copyTextToClipboard(jsonString);
+    if (result.success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+    } else {
+      console.error('Failed to copy:', result.error);
+      alert(`Copy failed: ${result.error || 'Unknown error'}`);
     }
   };
 

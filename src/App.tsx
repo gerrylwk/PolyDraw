@@ -25,7 +25,8 @@ import {
   straightenLine,
   createShapeSVG,
   copyImageToClipboard,
-  updateShapesVisibility
+  updateShapesVisibility,
+  cropPolygonToImage
 } from './utils';
 import { CanvasSettings, Point, Shape, PolygonShape } from './types';
 
@@ -295,6 +296,18 @@ function App() {
   const handleSimplificationPreviewChange = useCallback((preview: SimplificationPreview | null) => {
     setSimplificationPreview(preview);
   }, []);
+
+  const handleCropPolygon = useCallback(async (shape: Shape) => {
+    if (!canvas.imageInfo.element) {
+      console.warn('Image not loaded');
+      return;
+    }
+    if (shape.points.length < 3) {
+      console.warn('Polygon must have at least 3 points');
+      return;
+    }
+    await cropPolygonToImage(shape, canvas.imageInfo);
+  }, [canvas.imageInfo]);
 
   return (
     <div className="polydraw-app min-h-screen bg-gray-100" data-testid="polydraw-app">
@@ -763,7 +776,18 @@ function App() {
                             </div>
 
                             {/* Shape Actions */}
-                            <div className="polydraw-shape-actions flex items-center justify-between gap-2">
+                            <div className="polydraw-shape-actions flex items-center justify-start gap-2">
+                              <button
+                                onClick={() => handleCropPolygon(shape)}
+                                className="polydraw-crop-shape-button bg-blue-500 hover:bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:scale-110"
+                                title="Crop to image"
+                                data-testid={`crop-shape-${shape.id}`}
+                              >
+                                <svg className="polydraw-crop-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"/>
+                                  <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"/>
+                                </svg>
+                              </button>
                               <button
                                 onClick={() => shapes.removeShape(shape)}
                                 className="polydraw-delete-shape-button bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:scale-110"

@@ -9,3 +9,4 @@ export * from './nameGenerator';
 export * from './zoneUtils';
 export * from './geometryUtils';
 export * from './pathParsingUtils';
+export * from './clipboardUtils';

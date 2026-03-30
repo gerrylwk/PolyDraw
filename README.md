@@ -33,6 +33,11 @@ A simple SVG polygon editor built with React, TypeScript, and Vite. PolyDraw all
   - Live preview showing kept vs removed points
   - Undo support with reset to original
   - Maintains minimum 3 points for valid polygons
+- **Crop to Image**: Extract polygon region with transparent background
+  - One-click crop button beside delete button
+  - Automatically clamps to image boundaries
+  - Downloads as PNG with smart filename generation
+  - Minimum 1x1px crop size validation
 
 ### Output Options
 - **Python Format**: Generate Python coordinate arrays
@@ -103,10 +108,19 @@ docker-compose down
 3. Toggle **Normalize Coordinates** if needed
 4. Click **Copy to Clipboard** to copy the code
 
+### Cropping Polygon Regions
+1. Create a polygon around the region you want to extract
+2. Locate the polygon in the Edit Coordinates section
+3. Click the blue **crop button** next to the delete button
+4. The cropped image downloads automatically as PNG with transparent background
+5. Filename format: `{originalname}_{polygonname}_cropped.png`
+
 ## 🎯 Use Cases
 
 - **Computer Vision**: Create training data for object detection
 - **Image Annotation**: Mark regions of interest in images
+- **Image Extraction**: Crop specific regions from images with transparency
+- **Asset Creation**: Extract game sprites, UI elements, or image components
 - **SVG Generation**: Create vector graphics from coordinates
 - **GIS Applications**: Define geographic regions
 
