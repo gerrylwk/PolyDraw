@@ -218,7 +218,7 @@ export const cropPolygonToImage = async (
 
   const originalName = imageInfo.fileName.replace(/\.[^/.]+$/, '') || 'image';
   const shapeName = shape.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-  const fileName = `${originalName}_${shapeName}_cropped.png`;
+  const fileName = `${originalName}_cropped.png`;
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
