@@ -249,6 +249,57 @@ export const parseSVGString = (
   return newPolygons.map(polygon => convertPolygonToShape(polygon, opacity));
 };
 
+/**
+ * Parses a YOLO coordinate string into shapes.
+ * Each non-comment line: `class_id cx cy w h` (5 numbers).
+ * If normalize is true, cx/cy/w/h are in [0,1] and scaled by image dims.
+ * Each bbox is materialized as a 4-point polygon (TL, TR, BR, BL).
+ */
+export const parseYOLOString = (
+  yoloString: string,
+  normalize: boolean = false,
+  imageInfo?: ImageInfo,
+  opacity: number = 1
+): PolygonShape[] => {
+  const lines = yoloString.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
+  const newPolygons: Polygon[] = [];
+
+  lines.forEach((line, index) => {
+    const tokens = line.trim().split(/\s+/).map(t => parseFloat(t));
+    if (tokens.length < 5 || tokens.some(n => isNaN(n))) return;
+
+    let [, cx, cy, w, h] = tokens;
+    if (normalize && imageInfo) {
+      cx *= imageInfo.naturalWidth;
+      cy *= imageInfo.naturalHeight;
+      w *= imageInfo.naturalWidth;
+      h *= imageInfo.naturalHeight;
+    }
+
+    const x0 = cx - w / 2;
+    const y0 = cy - h / 2;
+    const x1 = cx + w / 2;
+    const y1 = cy + h / 2;
+
+    const points: Point[] = [
+      { x: x0, y: y0 },
+      { x: x1, y: y0 },
+      { x: x1, y: y1 },
+      { x: x0, y: y1 },
+    ];
+
+    newPolygons.push({
+      id: Date.now() + Math.floor(Math.random() * 1000000) + index,
+      name: `Polygon ${index + 1}`,
+      points,
+      color: { r: 59, g: 130, b: 246 },
+      pointElements: []
+    });
+  });
+
+  return newPolygons.map(polygon => convertPolygonToShape(polygon, opacity));
+};
+
 // ==== POLYGON FORMAT FUNCTIONS ====
 
 /**
